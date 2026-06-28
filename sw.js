@@ -1,4 +1,4 @@
-const CACHE = 'wedding-planner-v30';
+const CACHE = 'wedding-planner-v36';
 const FILES = [
   '/wedding-planner/',
   '/wedding-planner/index.html',
