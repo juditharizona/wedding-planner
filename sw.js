@@ -1,4 +1,4 @@
-const CACHE = 'wedding-planner-v1';
+const CACHE = 'wedding-planner-v2';
 const FILES = [
   '/wedding-planner/',
   '/wedding-planner/index.html',
@@ -18,6 +18,7 @@ self.addEventListener('activate', e => {
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     )
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
