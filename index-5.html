@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#C2698F" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Our Wedding" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Our Wedding Planner</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:       #C2698F;
+      --pink-dark:  #A0446E;
+      --pink-light: #F9E8EF;
+      --pink-pale:  #FDF0F4;
+      --blue:       #6B8FAB;
+      --blue-light: #E8F0F6;
+      --green:      #5A8A5A;
+      --green-bg:   #F0F8F0;
+      --bg:         #FDF6F8;
+      --card:       #FFFFFF;
+      --text:       #3A2A30;
+      --muted:      #9A8890;
+      --border:     #F0DCE4;
+      --radius:     14px;
+      --shadow:     0 2px 12px rgba(194,105,143,0.10);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+
+    #app {
+      max-width: 680px;
+      margin: 0 auto;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(150deg, #C2698F 0%, #A0446E 55%, #6B8FAB 100%);
+      padding: env(safe-area-inset-top, 16px) 20px 20px;
+      padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .header-flowers {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .header-flowers span {
+      position: absolute; font-size: 22px; opacity: 0.18;
+    }
+    .header-eyebrow {
+      font-size: 10px; letter-spacing: 3px; color: rgba(255,255,255,0.75);
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px; color: #fff; font-weight: 400;
+      margin-bottom: 16px; text-shadow: 0 1px 6px rgba(0,0,0,0.15);
+    }
+    .pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .pill {
+      background: rgba(255,255,255,0.2); border-radius: 20px;
+      padding: 5px 13px; color: #fff; font-size: 12px;
+      backdrop-filter: blur(4px);
+    }
+    .pill strong { font-weight: 700; margin-right: 4px; }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex; background: #fff;
+      border-bottom: 1.5px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(194,105,143,0.08);
+    }
+    .tab-btn {
+      flex: 1; padding: 11px 2px; border: none; background: none;
+      cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif;
+      font-weight: 400; color: var(--muted);
+      border-bottom: 2.5px solid transparent;
+      transition: all 0.15s; letter-spacing: 0.2px;
+    }
+    .tab-btn.active { font-weight: 700; color: var(--pink); border-bottom-color: var(--pink); }
+
+    /* ── CONTENT ── */
+    .content { padding: 18px 14px 60px; flex: 1; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card); border-radius: var(--radius);
+      border: 1.5px solid var(--border); box-shadow: var(--shadow);
+    }
+    .card + .card, .card + .dashed-card { margin-top: 10px; }
+
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--pink);
+      display: flex; align-items: center; gap: 5px; margin-bottom: 7px;
+    }
+    .section-label-row {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px;
+    }
+    .section-count { font-size: 11px; color: var(--muted); }
+
+    /* ── CHECKLIST ── */
+    .task-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; cursor: pointer;
+      border-top: 1px solid var(--border); transition: background 0.1s;
+    }
+    .task-row:first-child { border-top: none; }
+    .task-row.done-row { background: var(--green-bg); }
+    .task-circle {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid var(--border); background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; cursor: pointer;
+    }
+    .task-circle.done { border-color: var(--pink); background: var(--pink); }
+    .task-circle.done::after { content: '✓'; color: #fff; font-size: 11px; }
+    .task-text { flex: 1; font-size: 14px; color: var(--text); }
+    .task-text.done { text-decoration: line-through; color: var(--muted); }
+    .task-actions { display: flex; gap: 4px; }
+    .icon-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 15px; padding: 3px 5px; border-radius: 6px;
+      line-height: 1; transition: background 0.1s;
+    }
+    .icon-btn:hover { background: var(--pink-light); }
+    .icon-btn.blue { color: var(--blue); }
+    .icon-btn.muted { color: var(--muted); font-size: 18px; }
+
+    .add-row {
+      border-top: 1px dashed var(--border);
+      padding: 9px 14px;
+    }
+    .add-btn {
+      background: none; border: none; color: var(--pink);
+      font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif;
+      padding: 0;
+    }
+
+    /* ── INPUTS ── */
+    input, textarea, select {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px; color: var(--text);
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 10px 12px; background: #fff; outline: none;
+      width: 100%; transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--pink); }
+    textarea { resize: none; }
+    select { cursor: pointer; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+      color: #fff; border: none; border-radius: 10px;
+      padding: 11px 20px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      width: 100%; letter-spacing: 0.3px; transition: opacity 0.15s;
+    }
+    .btn-primary:active { opacity: 0.85; }
+    .btn-ghost {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 20px;
+      font-size: 14px; color: var(--muted);
+      cursor: pointer; font-family: 'Inter', sans-serif; width: 100%;
+    }
+    .btn-row { display: flex; gap: 8px; }
+    .btn-row .btn-primary, .btn-row .btn-ghost { width: auto; flex: 1; }
+
+    .tag-btn {
+      padding: 5px 13px; border-radius: 20px; font-size: 12px;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      border: 1.5px solid var(--border); background: transparent; color: var(--muted);
+      transition: all 0.12s;
+    }
+    .tag-btn.active-pink { border-color: var(--pink); background: var(--pink-light); color: var(--pink); font-weight: 700; }
+    .tag-btn.active-green { border-color: var(--green); background: var(--green-bg); color: var(--green); font-weight: 700; }
+    .tag-btn.active-blue { border-color: var(--blue); background: var(--blue-light); color: var(--blue); font-weight: 700; }
+
+    /* ── GUESTS ── */
+    .summary-pills { display: flex; gap: 8px; margin-bottom: 14px; }
+    .summary-pill {
+      flex: 1; border-radius: 12px; padding: 10px 8px;
+      text-align: center; border: 1.5px solid var(--border);
+    }
+    .summary-pill .big { font-size: 22px; font-weight: 700; }
+    .summary-pill .small { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .guest-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .guest-col-list { display: flex; flex-direction: column; gap: 8px; }
+    .guest-column-header {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; padding: 6px 0; text-align: center; margin-bottom: 6px;
+    }
+    .guest-card {
+      padding: 10px; cursor: pointer;
+      height: 80px; display: flex; flex-direction: column; justify-content: space-between;
+      overflow: hidden; user-select: none; box-sizing: border-box; margin: 0 !important;
+    }
+    .guest-card.dragging { opacity: 0.4; }
+    .guest-card.drag-over { border-color: var(--pink); background: var(--pink-pale); }
+    .guest-name-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .guest-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; }
+    .tag-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+    .guest-expanded-panel {
+      margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px;
+    }
+
+    /* ── BUDGET ── */
+    .budget-actual-input {
+      width: 68px; padding: 5px 8px; border-radius: 8px;
+      border: 1.5px solid var(--border); font-size: 13px;
+      text-align: right; background: transparent;
+      margin-left: auto; display: block;
+    }
+    .budget-actual-input.has-value { border-color: var(--pink); background: var(--pink-light); }
+
+    /* ── VENUES ── */
+    .venue-card { padding: 16px; }
+    .venue-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+    .venue-name { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 400; }
+    .venue-header-right { display: flex; align-items: center; gap: 6px; }
+    .venue-location { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .venue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .venue-field-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.8px; }
+    .venue-field-value { font-size: 13px; color: var(--text); }
+    .status-badge {
+      font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 700;
+    }
+
+    /* ── DASHED ADD CARD ── */
+    .dashed-card {
+      border: 1.5px dashed var(--pink); border-radius: var(--radius);
+      padding: 14px; cursor: pointer; text-align: center;
+      color: var(--pink); font-size: 14px; background: none;
+      width: 100%; font-family: 'Inter', sans-serif; transition: background 0.1s;
+    }
+    .dashed-card:hover { background: var(--pink-pale); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state { text-align: center; padding: 32px 0; }
+    .empty-state p { color: var(--muted); font-size: 14px; margin-top: 8px; }
+
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-flowers" id="headerFlowers"></div>
+    <div class="header-eyebrow">✿ Our Wedding ✿</div>
+    <div class="header-title" id="headerTitle">Wedding Planner</div>
+    <div class="pills" id="headerPills"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="checklist">Checklist</button>
+    <button class="tab-btn" data-tab="guests">Guests</button>
+    <button class="tab-btn" data-tab="finance">Finance</button>
+    <button class="tab-btn" data-tab="venues">Venues</button>
+    <button class="tab-btn" data-tab="settings">⚙️</button>
+  </div>
+
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+// ── DATA ──
+const STORE = {
+  checklist: 'wp_checklist',
+  guests: 'wp_guests',
+  budget: 'wp_budget',
+  venues: 'wp_venues',
+  vendors: 'wp_vendors',
+  settings: 'wp_settings',
+};
+
+const DEFAULT_CHECKLIST = [
+  { id:1, section:"First Things First", task:"Agree guest list and numbers", done:false },
+  { id:2, section:"First Things First", task:"Set your budget ceiling", done:false },
+  { id:3, section:"First Things First", task:"Visit and shortlist venues", done:false },
+  { id:4, section:"First Things First", task:"Book venue — this sets your date", done:false },
+  { id:5, section:"First Things First", task:"Give 3 months' legal notice to HSE Register Office", done:false },
+  { id:6, section:"First Things First", task:"Choose and book your celebrant", done:false },
+  { id:7, section:"Once Venue Is Booked", task:"Send save the dates", done:false },
+  { id:8, section:"Once Venue Is Booked", task:"Book photographer", done:false },
+  { id:9, section:"Once Venue Is Booked", task:"Sort catering", done:false },
+  { id:10, section:"Once Venue Is Booked", task:"Sort guest accommodation", done:false },
+  { id:11, section:"Once Venue Is Booked", task:"Choose your outfit", done:false },
+  { id:12, section:"Once Venue Is Booked", task:"Book music or arrange playlist", done:false },
+  { id:13, section:"A Few Months Out", task:"Send formal invitations", done:false },
+  { id:14, section:"A Few Months Out", task:"Confirm dietary requirements", done:false },
+  { id:15, section:"A Few Months Out", task:"Arrange wedding rings", done:false },
+  { id:16, section:"A Few Months Out", task:"Confirm all suppliers in writing", done:false },
+  { id:17, section:"A Few Months Out", task:"Arrange flowers", done:false },
+  { id:18, section:"A Few Months Out", task:"Arrange transport if needed", done:false },
+  { id:19, section:"Final Few Weeks", task:"Chase outstanding RSVPs", done:false },
+  { id:20, section:"Final Few Weeks", task:"Confirm final numbers with venue/caterer", done:false },
+  { id:21, section:"Final Few Weeks", task:"Prepare ceremony details with celebrant", done:false },
+  { id:22, section:"Final Few Weeks", task:"Confirm photographer schedule", done:false },
+  { id:23, section:"Final Few Weeks", task:"Assign a day-of point of contact", done:false },
+];
+
+const DEFAULT_BUDGET = [
+  { id:1, item:"Venue hire", estimated:"2000", actual:"" },
+  { id:2, item:"Catering & drinks", estimated:"2500", actual:"" },
+  { id:3, item:"Celebrant", estimated:"550", actual:"" },
+  { id:4, item:"Photographer", estimated:"1200", actual:"" },
+  { id:5, item:"Outfit(s)", estimated:"550", actual:"" },
+  { id:6, item:"Flowers", estimated:"350", actual:"" },
+  { id:7, item:"Music", estimated:"450", actual:"" },
+  { id:8, item:"Cake", estimated:"225", actual:"" },
+  { id:9, item:"Stationery", estimated:"100", actual:"" },
+  { id:10, item:"Rings", estimated:"1000", actual:"" },
+  { id:11, item:"Miscellaneous", estimated:"400", actual:"" },
+];
+
+const DEFAULT_VENUES = [
+  { id:1, name:"The Old Deanery", location:"Ferns, Co. Wexford", contact:"Bryanna — 087 263 3355", price:"", notes:"Barn, cottages, rural, flexible owner", status:"Enquire" },
+  { id:2, name:"Ballinkeele House", location:"Enniscorthy, Co. Wexford", contact:"053 913 8105", price:"", notes:"Georgian house, group accommodation", status:"Enquire" },
+  { id:3, name:"Marlfield House", location:"Gorey, Co. Wexford", contact:"Dawn — 053 942 1124", price:"From €145pp", notes:"Luxury hotel, may be over budget", status:"Maybe" },
+  { id:4, name:"Wells House & Gardens", location:"Gorey, Co. Wexford", contact:"053 918 6737", price:"", notes:"Victorian estate, worth an enquiry", status:"Enquire" },
+];
+
+const DEFAULT_VENDORS = [
+  { id:1, name:"", category:"Florist",      contact:"", price:"", notes:"", status:"Not booked" },
+  { id:2, name:"", category:"Catering",     contact:"", price:"", notes:"", status:"Not booked" },
+  { id:3, name:"", category:"Photography",  contact:"", price:"", notes:"", status:"Not booked" },
+  { id:4, name:"", category:"Celebrant",    contact:"", price:"", notes:"", status:"Not booked" },
+  { id:5, name:"", category:"Music",        contact:"", price:"", notes:"", status:"Not booked" },
+  { id:6, name:"", category:"Cake",         contact:"", price:"", notes:"", status:"Not booked" },
+];
+
+
+function load(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; }
+  catch { return def; }
+}
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+let state = {
+  checklist: load(STORE.checklist, DEFAULT_CHECKLIST),
+  guests:    load(STORE.guests, []),
+  budget:    load(STORE.budget, DEFAULT_BUDGET),
+  venues:    load(STORE.venues, DEFAULT_VENUES),
+  vendors:   load(STORE.vendors, DEFAULT_VENDORS),
+  settings:  load(STORE.settings, { name1: '', name2: '', ceiling: 10000 }),
+  guestFilter: null,
+  addGuestOpen: false,
+  addVendorOpen: false,
+  addBudgetOpen: false,
+  tab:       'checklist',
+};
+
+function saveAll() {
+  save(STORE.checklist, state.checklist);
+  save(STORE.guests,    state.guests);
+  save(STORE.budget,    state.budget);
+  save(STORE.venues,    state.venues);
+  save(STORE.vendors,   state.vendors);
+  save(STORE.settings,  state.settings);
+}
+
+// ── SYNC VENDOR TO BUDGET ──
+function syncVendorToBudget(vendor) {
+  const price = parseFloat(vendor.price);
+  const label = vendor.name ? `${vendor.category} — ${vendor.name}` : vendor.category;
+  const existing = state.budget.find(b => b.vendorId === vendor.id);
+  if (existing) {
+    existing.item      = label;
+    existing.estimated = (!isNaN(price) && price > 0) ? String(price) : '';
+  } else if (!isNaN(price) && price > 0) {
+    state.budget.push({
+      id:        Date.now(),
+      vendorId:  vendor.id,
+      item:      label,
+      estimated: String(price),
+      actual:    '',
+    });
+  }
+}
+
+function removeVendorFromBudget(vendorId) {
+  state.budget = state.budget.filter(b => b.vendorId !== vendorId);
+}
+
+
+const flowerSVG = (size=16, color='#C2698F', op=0.7) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" style="display:inline-block;vertical-align:middle;opacity:${op}">
+    <circle cx="12" cy="12" r="3" fill="${color}"/>
+    ${[0,60,120,180,240,300].map(d=>`<ellipse cx="12" cy="5" rx="2.2" ry="3.5" fill="${color}" transform="rotate(${d} 12 12)"/>`).join('')}
+  </svg>`;
+
+const statusConfig = {
+  'Enquire':   { bg:'#FFF3E0', color:'#E65100', emoji:'📋' },
+  'Maybe':     { bg:'#E8F0F6', color:'#6B8FAB', emoji:'🤔' },
+  'Booked':    { bg:'#F0F8F0', color:'#5A8A5A', emoji:'✅' },
+  'Ruled out': { bg:'#FFEBEE', color:'#B71C1C', emoji:'✗'  },
+};
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function isDuplicate(list, field, value, excludeId = null) {
+  return list.some(item =>
+    item.id !== excludeId &&
+    String(item[field]).toLowerCase().trim() === value.toLowerCase().trim()
+  );
+}
+
+function dupAlert(overlay, fieldId, msg) {
+  const el = overlay.querySelector ? overlay.querySelector(`#${fieldId}`) : document.getElementById(fieldId);
+  if (!el) return;
+  el.style.borderColor = 'var(--pink-dark)';
+  el.value = '';
+  el.placeholder = msg;
+  setTimeout(() => { el.style.borderColor = ''; el.placeholder = ''; }, 2500);
+}
+
+// ── HEADER ──
+function renderHeader() {
+  const flowers = document.getElementById('headerFlowers');
+  const positions = [[8,8],[88,6],[18,70],[75,65],[45,15],[55,80]];
+  flowers.innerHTML = positions.map(([l,t]) =>
+    `<span style="left:${l}%;top:${t}%">🌸</span>`
+  ).join('');
+
+  const done = state.checklist.filter(t=>t.done).length;
+  const confirmedGuests = state.guests.filter(g=>g.rsvp==='Yes');
+  const confirmed = confirmedGuests.reduce((sum,g)=>sum+(g.plusOne?2:1),0);
+  const totalGuests = state.guests.reduce((sum,g)=>sum+(g.plusOne?2:1),0);
+  const spent = state.budget.reduce((s,b)=>s+(parseFloat(b.actual)||0),0);
+
+  const { name1, name2 } = state.settings;
+  const titleEl = document.getElementById('headerTitle');
+  if (name1 && name2) {
+    titleEl.innerHTML = `<span style="font-family:'Playfair Display',serif;font-size:26px;color:#fff;font-weight:400;text-shadow:0 1px 6px rgba(0,0,0,0.15)">${esc(name1)}</span> <span style="font-size:22px">💍</span> <span style="font-family:'Playfair Display',serif;font-size:26px;color:#fff;font-weight:400;text-shadow:0 1px 6px rgba(0,0,0,0.15)">${esc(name2)}</span>`;
+  } else {
+    titleEl.innerHTML = `<span style="font-family:'Playfair Display',serif;font-size:26px;color:#fff;font-weight:400;text-shadow:0 1px 6px rgba(0,0,0,0.15)">Wedding Planner</span>`;
+  }
+
+  document.getElementById('headerPills').innerHTML = [
+    { v:`${done}/${state.checklist.length}`, l:'tasks done' },
+    { v:`${confirmed}/${totalGuests}`, l:'guests confirmed' },
+    { v:`€${spent.toLocaleString()}`, l:'budget used' },
+  ].map(p=>`<div class="pill"><strong>${esc(p.v)}</strong>${esc(p.l)}</div>`).join('');
+}
+
+// ── TABS ──
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.tab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    });
+  });
+}
+
+// ── RENDER ──
+function render() {
+  renderHeader();
+  const c = document.getElementById('content');
+  let html = '';
+  if (state.tab==='checklist') html = renderChecklist();
+  else if (state.tab==='guests') html = renderGuests();
+  else if (state.tab==='finance') html = renderFinance();
+  else if (state.tab==='venues') html = renderVenues();
+  else if (state.tab==='settings') html = renderSettings();
+  // Append footer timestamp
+  html += `<div style="text-align:center;padding:16px 0 4px;font-size:11px;color:var(--muted)">App updated 28 Jun 2025 · v35</div>`;
+  c.innerHTML = html;
+  bindEvents();
+  if (state.tab==='guests') initDragDrop();
+}
+
+// ── CHECKLIST ──
+function renderChecklist() {
+  const sections = [...new Set(state.checklist.map(t=>t.section))]
+    .sort((a,b) => {
+      const aDone = state.checklist.filter(t=>t.section===a).every(t=>t.done);
+      const bDone = state.checklist.filter(t=>t.section===b).every(t=>t.done);
+      return aDone === bDone ? 0 : aDone ? 1 : -1;
+    });
+  return sections.map(section => {
+    const tasks = state.checklist.filter(t=>t.section===section)
+      .sort((a,b) => a.done === b.done ? 0 : a.done ? 1 : -1);
+    const doneCount = tasks.filter(t=>t.done).length;
+    return `
+      <div style="margin-bottom:20px">
+        <div class="section-label-row">
+          <div class="section-label">${flowerSVG(12,'#C2698F',0.8)} ${esc(section)}</div>
+          <span class="section-count">${doneCount}/${tasks.length}</span>
+        </div>
+        <div class="card">
+          ${tasks.map(task => `
+            <div class="task-row${task.done?' done-row':''}" id="task-row-${task.id}">
+              <div class="task-circle${task.done?' done':''}" data-toggle="${task.id}"></div>
+              <span class="task-text${task.done?' done':''}" data-toggle="${task.id}">${esc(task.task)}</span>
+              <div class="task-actions">
+                <button class="icon-btn blue" data-edit-task="${task.id}" title="Edit">✎</button>
+                <button class="icon-btn muted" data-delete-task="${task.id}" title="Delete">×</button>
+              </div>
+            </div>
+          `).join('')}
+          <div class="add-row">
+            <button class="add-btn" data-add-task="${esc(section)}">+ Add a task</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── GUESTS ──
+function renderGuests() {
+  const { name1, name2 } = state.settings;
+  const brideName = name1 || 'Bride';
+  const groomName = name2 || 'Groom';
+
+  const counts = { Yes:0, Pending:0, No:0 };
+  state.guests.forEach(g => {
+    const weight = g.plusOne ? 2 : 1;
+    counts[g.rsvp] = (counts[g.rsvp]||0) + weight;
+  });
+  const total = state.guests.reduce((sum,g)=>sum+(g.plusOne?2:1),0);
+  const brideGuests = state.guests.filter(g=>g.side==='Bride');
+  const groomGuests = state.guests.filter(g=>g.side==='Groom');
+  const bothGuests  = state.guests.filter(g=>!g.side||g.side==='Both');
+  const brideCount  = brideGuests.reduce((s,g)=>s+(g.plusOne?2:1),0);
+  const groomCount  = groomGuests.reduce((s,g)=>s+(g.plusOne?2:1),0);
+  const sideTotal   = brideCount + groomCount + bothGuests.reduce((s,g)=>s+(g.plusOne?2:1),0);
+  const bridePct    = sideTotal ? Math.round((brideCount/sideTotal)*100) : 50;
+  const groomPct    = sideTotal ? Math.round((groomCount/sideTotal)*100) : 50;
+
+  function guestCard(g) {
+    const rsvpColor = g.rsvp==='Yes'?'var(--green)':g.rsvp==='No'?'var(--muted)':'var(--pink)';
+    return `
+      <div class="card guest-card" data-expand="${g.id}" data-guest-id="${g.id}" draggable="false">
+        <div class="guest-name-row">
+          <span class="guest-name">${esc(g.name)}${g.plusOne?` <span style="font-size:9px;background:var(--pink-light);color:var(--pink);border-radius:6px;padding:1px 4px;font-weight:600">+1</span>`:''}</span>
+          <button class="icon-btn muted" data-delete-guest="${g.id}" style="font-size:16px;flex-shrink:0">×</button>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <span style="font-size:10px;font-weight:700;color:${rsvpColor}">${g.rsvp}</span>
+          ${g.dietary ? `<span style="font-size:9px;color:var(--muted)">· 🍽</span>` : ''}
+          ${g.notes ? `<span style="font-size:9px;color:var(--muted)">· 📝</span>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function expandedPanel(g) {
+    if (!g.expanded) return '';
+    return `
+      <div class="card" style="padding:14px;margin-bottom:8px;border-color:var(--pink)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <input class="guest-name-edit" data-gid="${g.id}" value="${esc(g.name)}" style="font-weight:700;font-size:15px;border:none;border-bottom:1.5px solid var(--border);border-radius:0;padding:2px 0;flex:1;background:transparent" />
+          <button class="icon-btn muted" data-close-guest="${g.id}" style="font-size:18px;margin-left:8px">×</button>
+        </div>
+        <div class="tag-row">
+          ${['Yes','Pending','No'].map(s=>{
+            const active=g.rsvp===s;
+            return `<button class="tag-btn ${active?(s==='Yes'?'active-green':'active-pink'):''}" data-rsvp="${g.id}" data-val="${s}" style="font-size:11px;padding:3px 10px">${s}</button>`;
+          }).join('')}
+          <button class="tag-btn${g.plusOne?' active-pink':''}" data-plusone="${g.id}" style="font-size:11px;padding:3px 10px">${g.plusOne?'👫 +1':'👤 +1'}</button>
+        </div>
+        <div class="tag-row" style="margin-bottom:10px">
+          ${['Bride','Groom','Both'].map(side=>{
+            const active=(g.side||'Both')===side;
+            const cls=active?(side==='Bride'?'active-pink':side==='Groom'?'active-blue':'active-green'):'';
+            const label=side==='Bride'?esc(brideName):side==='Groom'?esc(groomName):'Both';
+            return `<button class="tag-btn ${cls}" data-side="${g.id}" data-val="${side}" style="font-size:11px;padding:3px 10px">${label}</button>`;
+          }).join('')}
+        </div>
+        <input class="guest-dietary" data-gid="${g.id}" placeholder="Dietary requirements" value="${esc(g.dietary||'')}" style="margin-bottom:6px;font-size:13px" />
+        <input class="guest-notes-field" data-gid="${g.id}" placeholder="Notes (optional)" value="${esc(g.notes||'')}" style="font-size:13px" />
+      </div>`;
+  }
+
+  const expandedGuest = state.guests.find(g=>g.expanded);
+
+  const activeFilter = state.guestFilter || null;
+  const filterGuests = activeFilter ? state.guests.filter(g => g.rsvp === activeFilter) : [];
+
+  return `
+    <div class="summary-pills">
+      ${[['Yes','#F0F8F0','#5A8A5A','Coming 💚'],['Pending','#FDF0F4','#C2698F','Pending 🌸'],['No','#f5f5f5','#9A8890','Can\'t make it']].map(([rsvp,bg,col,label])=>`
+        <div class="summary-pill" style="background:${bg};cursor:pointer;border:1.5px solid ${activeFilter===rsvp?col:'var(--border)'};transition:border 0.15s" data-filter="${rsvp}">
+          <div class="big" style="color:${col}">${counts[rsvp]||0}</div>
+          <div class="small">${label}</div>
+        </div>`).join('')}
+    </div>
+
+    ${activeFilter ? `
+    <div class="card" style="padding:12px;margin-bottom:12px;border-color:${activeFilter==='Yes'?'#5A8A5A':activeFilter==='No'?'#9A8890':'var(--pink)'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">${activeFilter==='Yes'?'Coming':activeFilter==='No'?"Can't make it":'Pending'} (${filterGuests.length})</span>
+        <button data-filter-close style="background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;line-height:1">×</button>
+      </div>
+      ${filterGuests.length===0
+        ? `<div style="font-size:13px;color:var(--muted);text-align:center;padding:8px 0">Nobody in this group yet</div>`
+        : filterGuests.map(g=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:14px;color:var(--text)">${esc(g.name)}${g.plusOne?` <span style="font-size:10px;background:var(--pink-light);color:var(--pink);border-radius:6px;padding:1px 5px;font-weight:600">+1</span>`:''}</span>
+            <span style="font-size:11px;color:var(--muted)">${g.side&&g.side!=='Both'?esc(g.side==='Bride'?brideName:groomName):''}</span>
+          </div>`).join('')}
+    </div>` : ''}
+
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin:-4px 0 12px">${total} people total (including plus ones)</div>
+
+    <!-- Balance bar -->
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><div style="font-size:18px;font-weight:700;color:var(--pink)">${brideCount}</div><div style="font-size:11px;color:var(--muted)">${esc(brideName)}</div></div>
+        <div style="font-size:11px;color:var(--muted)">${bridePct}% · ${groomPct}%</div>
+        <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--blue)">${groomCount}</div><div style="font-size:11px;color:var(--muted)">${esc(groomName)}</div></div>
+      </div>
+      <div style="display:flex;border-radius:20px;overflow:hidden;height:8px;background:var(--blue-light)">
+        <div style="width:${bridePct}%;background:var(--pink);transition:width 0.4s"></div>
+        <div style="width:${groomPct}%;background:var(--blue);transition:width 0.4s"></div>
+      </div>
+      ${bothGuests.length?`<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">${bothGuests.reduce((s,g)=>s+(g.plusOne?2:1),0)} shared / both sides</div>`:''}
+    </div>
+
+    <!-- Add guest -->
+    <div style="margin-bottom:12px">
+      <button class="btn-primary" id="toggleAddGuest" style="width:100%;padding:10px;font-size:13px">${flowerSVG(12,'#fff',0.9)} Add guest</button>
+    </div>
+    ${state.addGuestOpen ? `
+    <div class="card" style="padding:14px;margin-bottom:12px;border-color:var(--pink)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="section-label" style="margin-bottom:0">${flowerSVG(12,'#C2698F',0.8)} New Guest</div>
+        <button id="closeAddGuest" style="background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;line-height:1">×</button>
+      </div>
+      <input id="newGuestName" placeholder="Guest name" style="margin-bottom:8px" />
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        ${['Yes','Pending','No'].map(s=>`<button class="tag-btn" id="newRsvp-${s}" data-new-rsvp="${s}" style="font-size:11px;padding:3px 10px">${s}</button>`).join('')}
+        <button class="tag-btn" id="newPlusOne" data-new-plusone style="font-size:11px;padding:3px 10px">👤 +1</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        ${['Bride','Groom','Both'].map(side=>{
+          const label = side==='Bride'?esc(brideName):side==='Groom'?esc(groomName):'Both';
+          return `<button class="tag-btn" id="newSide-${side}" data-new-side="${side}" style="font-size:11px;padding:3px 10px">${label}</button>`;
+        }).join('')}
+      </div>
+      <input id="newGuestDietary" placeholder="Dietary requirements (optional)" style="margin-bottom:8px" />
+      <input id="newGuestNotes" placeholder="Notes (optional)" style="margin-bottom:10px" />
+      <button class="btn-primary" id="addGuestBtn">Add to guest list</button>
+    </div>` : ''}
+
+    <!-- Expanded panel -->
+    ${expandedGuest ? expandedPanel(expandedGuest) : ''}
+
+    ${state.guests.length===0 ? `
+      <div class="empty-state">${flowerSVG(28,'#C2698F',0.4)}<p>No guests yet — add your first one above!</p></div>
+    ` : `
+      <div class="guest-columns" id="guestColumns">
+        <div>
+          <div class="guest-column-header" style="color:var(--pink)">${flowerSVG(11,'#C2698F',0.7)} ${esc(brideName)} (${brideCount})</div>
+          <div class="guest-col-list" data-col="Bride">
+            ${brideGuests.length ? brideGuests.map(guestCard).join('') : `<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">None yet</div>`}
+          </div>
+        </div>
+        <div>
+          <div class="guest-column-header" style="color:var(--blue)">${flowerSVG(11,'#6B8FAB',0.7)} ${esc(groomName)} (${groomCount})</div>
+          <div class="guest-col-list" data-col="Groom">
+            ${groomGuests.length ? groomGuests.map(guestCard).join('') : `<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">None yet</div>`}
+          </div>
+        </div>
+      </div>
+      ${bothGuests.length ? `
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;text-align:center;margin:4px 0 6px">Both sides</div>
+        <div class="guest-columns">
+          <div class="guest-col-list" data-col="Both">
+            ${bothGuests.filter((_,i)=>i%2===0).map(guestCard).join('')}
+          </div>
+          <div class="guest-col-list" data-col="Both">
+            ${bothGuests.filter((_,i)=>i%2!==0).map(guestCard).join('')}
+          </div>
+        </div>` : ''}
+    `}
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px">💡 Tap a card to edit · Long press to drag</div>
+  `;
+}
+
+
+// ── VENDOR CONFIG ──
+const vendorStatusConfig = {
+  'Not booked': { bg:'#FFF3E0', color:'#E65100', emoji:'🔍' },
+  'Enquiring':  { bg:'#E8F0F6', color:'#6B8FAB', emoji:'📩' },
+  'Booked':     { bg:'#F0F8F0', color:'#5A8A5A', emoji:'✅' },
+  'Not needed': { bg:'#f5f5f5', color:'#9A8890', emoji:'—'  },
+};
+const VENDOR_CATEGORIES = ['Florist','Catering','Photography','Celebrant','Music','Cake','Hair & Makeup','Transport','Stationery','Other'];
+
+
+// ── FINANCE ──
+function renderFinance() {
+  const CEILING = parseFloat(state.settings.ceiling) || 10000;
+  const spent = state.budget.reduce((s,b)=>s+(parseFloat(b.actual)||0),0);
+  const estimated = state.budget.reduce((s,b)=>s+(parseFloat(b.estimated)||0),0);
+  const pct = Math.min((spent/CEILING)*100,100);
+  const over = spent > CEILING;
+  const remaining = CEILING - spent;
+
+  const categories = {};
+  state.budget.forEach(b => {
+    const val = parseFloat(b.actual);
+    if (!val) return;
+    const cat = b.item.split('—')[0].trim();
+    categories[cat] = (categories[cat]||0) + val;
+  });
+  const catEntries = Object.entries(categories).sort((a,b)=>b[1]-a[1]);
+  const catColors = ['#C2698F','#6B8FAB','#5A8A5A','#E65100','#7B61FF','#E91E8C','#00897B','#F4A320'];
+
+  function donutChart() {
+    if (spent===0) return `<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">No confirmed spending yet</div>`;
+    const r=54,cx=70,cy=70,circ=2*Math.PI*r;
+    let offset=0;
+    const slices=catEntries.map(([cat,val],i)=>{
+      const d=(val/spent)*circ;
+      const s=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${catColors[i%catColors.length]}" stroke-width="22" stroke-dasharray="${d} ${circ-d}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      offset+=d; return s;
+    }).join('');
+    return `<svg width="140" height="140" viewBox="0 0 140 140">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="22"/>
+      ${slices}
+      <text x="${cx}" y="${cy-8}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">€${spent>=1000?(spent/1000).toFixed(1)+'k':spent}</text>
+      <text x="${cx}" y="${cy+10}" text-anchor="middle" font-size="9" fill="var(--muted)">confirmed</text>
+    </svg>`;
+  }
+
+  // Build unified item list: vendor items + manual budget items
+  const allItems = [
+    ...state.vendors.map(v => {
+      const b = state.budget.find(x=>x.vendorId===v.id);
+      const sc = vendorStatusConfig[v.status]||vendorStatusConfig['Not booked'];
+      return { type:'vendor', v, b, sc };
+    }),
+    ...state.budget.filter(b=>!b.vendorId).map(b => ({ type:'manual', b }))
+  ];
+
+  return `
+    <!-- Add buttons at top -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn-primary" id="toggleAddVendor" style="flex:1;padding:10px;font-size:13px">${flowerSVG(12,'#fff',0.9)} Add vendor</button>
+      <button class="btn-primary" id="toggleAddBudget" style="flex:1;padding:10px;font-size:13px">+ Add budget item</button>
+    </div>
+
+    ${state.addVendorOpen ? `
+    <div class="card" style="padding:14px;margin-bottom:12px;border-color:var(--pink)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="section-label" style="margin-bottom:0">${flowerSVG(12,'#C2698F',0.8)} New Vendor</div>
+        <button id="closeAddVendor" style="background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;line-height:1">×</button>
+      </div>
+      <div style="margin-bottom:8px">
+        <div class="venue-field-label" style="margin-bottom:4px">Category</div>
+        <input id="newVendorCat" placeholder="e.g. Florist, Catering, Photography" style="font-size:13px"/>
+      </div>
+      <div style="margin-bottom:8px">
+        <div class="venue-field-label" style="margin-bottom:4px">Vendor name</div>
+        <input id="newVendorName" placeholder="e.g. Jane Murphy Photography" style="font-size:13px"/>
+      </div>
+      <div style="margin-bottom:8px">
+        <div class="venue-field-label" style="margin-bottom:4px">Contact</div>
+        <input id="newVendorContact" placeholder="Phone or email" style="font-size:13px"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div class="venue-field-label" style="margin-bottom:4px">Estimated (€)</div>
+          <input id="newVendorPrice" placeholder="0" type="number" min="0" style="font-size:13px"/>
+        </div>
+        <div>
+          <div class="venue-field-label" style="margin-bottom:4px">Status</div>
+          <select id="newVendorStatus" style="font-size:13px;padding:8px 10px">
+            ${Object.keys(vendorStatusConfig).map(s=>`<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" id="addVendorBtn" style="font-size:13px">Add vendor</button>
+    </div>` : ''}
+
+    ${state.addBudgetOpen ? `
+    <div class="card" style="padding:14px;margin-bottom:12px;border-color:var(--pink)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="section-label" style="margin-bottom:0">${flowerSVG(12,'#C2698F',0.8)} New Budget Item</div>
+        <button id="closeAddBudget" style="background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;line-height:1">×</button>
+      </div>
+      <div style="margin-bottom:8px">
+        <div class="venue-field-label" style="margin-bottom:4px">Item name</div>
+        <input id="newBudgetItem" placeholder="e.g. Transport" style="font-size:13px"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <div class="venue-field-label" style="margin-bottom:4px">Estimated (€)</div>
+          <input id="newBudgetEst" placeholder="0" type="number" min="0" style="font-size:13px"/>
+        </div>
+        <div>
+          <div class="venue-field-label" style="margin-bottom:4px">Confirmed (€)</div>
+          <input id="newBudgetActual" placeholder="0" type="number" min="0" style="font-size:13px"/>
+        </div>
+      </div>
+      <button class="btn-primary" id="addBudgetBtn" style="font-size:13px">Add budget item</button>
+    </div>` : ''}
+
+    <!-- Overview card -->
+    <div class="card" style="padding:16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:700;color:var(--text)">€${spent.toLocaleString()} <span style="font-size:11px;font-weight:400;color:var(--muted)">of €${CEILING.toLocaleString()} budget</span></span>
+        <span style="font-size:12px;font-weight:700;color:${over?'#e74c3c':'var(--green)'}">${Math.round(pct)}% used</span>
+      </div>
+      <div style="background:var(--pink-light);border-radius:20px;height:14px;overflow:hidden;margin-bottom:10px">
+        <div class="finance-progress-bar" style="height:100%;border-radius:20px;background:${over?'#e74c3c':'linear-gradient(90deg,var(--pink),var(--blue))'};width:${pct}%;transition:width 0.4s"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;text-align:center">
+        <div><div style="font-size:15px;font-weight:700;color:var(--pink)">€${spent.toLocaleString()}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px">Confirmed</div></div>
+        <div><div style="font-size:15px;font-weight:700;color:var(--blue)">€${estimated.toLocaleString()}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px">Estimated</div></div>
+        <div><div style="font-size:15px;font-weight:700;color:${over?'#e74c3c':'var(--green)'}">${over?'⚠️ ':'🌸 '}€${Math.abs(remaining).toLocaleString()}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px">${over?'Over budget':'Remaining'}</div></div>
+      </div>
+    </div>
+
+    <!-- Donut chart -->
+    ${catEntries.length>0?`
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">${flowerSVG(11,'#C2698F',0.8)} Spending Breakdown</div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="flex-shrink:0">${donutChart()}</div>
+        <div style="flex:1;min-width:0">
+          ${catEntries.slice(0,5).map(([cat,val],i)=>`
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
+              <div style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:${catColors[i%catColors.length]}"></div>
+              <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${esc(cat)}</span>
+              <span style="font-size:12px;font-weight:600;flex-shrink:0;color:var(--text)">€${val.toLocaleString()}</span>
+            </div>`).join('')}
+          ${catEntries.length>5?`<div style="font-size:11px;color:var(--muted);margin-top:2px">+${catEntries.length-5} more</div>`:''}
+        </div>
+      </div>
+    </div>`:''}
+
+    <!-- Unified item list -->
+    <div style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">${flowerSVG(11,'#C2698F',0.8)} All Items</div>
+    <div class="card" style="overflow:hidden;margin-bottom:12px">
+      <!-- Header -->
+      <div style="display:grid;grid-template-columns:1fr 70px 70px 28px;padding:8px 12px;background:var(--pink-pale);border-bottom:1px solid var(--border)">
+        <span style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:0.8px">Item</span>
+        <span style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:0.8px;text-align:right">Est.</span>
+        <span style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:0.8px;text-align:right">Actual</span>
+        <span></span>
+      </div>
+
+      ${allItems
+        .sort((a,b) => {
+          const aAct = parseFloat(a.b?.actual)||0;
+          const bAct = parseFloat(b.b?.actual)||0;
+          if (aAct && bAct) return bAct - aAct;
+          if (aAct) return -1;
+          if (bAct) return 1;
+          const aEst = parseFloat(a.b?.estimated)||0;
+          const bEst = parseFloat(b.b?.estimated)||0;
+          return bEst - aEst;
+        })
+        .map(item => {
+        if (item.type==='vendor') {
+          const {v, b, sc} = item;
+          const est = b?.estimated ? `€${parseFloat(b.estimated).toLocaleString()}` : '—';
+          const actual = b?.actual ? `€${parseFloat(b.actual).toLocaleString()}` : '—';
+          const estVal = parseFloat(b?.estimated)||0;
+          const actVal = parseFloat(b?.actual)||0;
+          const diff = estVal && actVal ? actVal - estVal : null;
+          const diffSymbol = diff===null ? '' : diff>0 ? ' <span style="color:#e74c3c;font-size:10px">▲</span>' : diff<0 ? ' <span style="color:var(--green);font-size:10px">▼</span>' : ' <span style="color:var(--muted);font-size:10px">✓</span>';
+          const expanded = v.expanded;
+          return `
+            <div style="border-top:1px solid var(--border)">
+              <!-- Row -->
+              <div style="display:grid;grid-template-columns:1fr 70px 70px 28px;padding:11px 12px;align-items:center;cursor:pointer;background:${expanded?'var(--pink-pale)':'transparent'}" data-expand-vendor="${v.id}">
+                <div>
+                  <div style="font-size:11px;color:var(--muted)">${esc(v.category)}</div>
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">${v.name?esc(v.name):'<span style="color:var(--muted);font-style:italic;font-weight:400">Not chosen</span>'}</div>
+                </div>
+                <div style="text-align:right;font-size:12px;color:var(--blue);font-weight:600;white-space:nowrap">${diffSymbol}${est}</div>
+                <div style="text-align:right;font-size:12px;color:${b?.actual?'var(--green)':'var(--muted)'};font-weight:${b?.actual?'700':'400'}">${actual}</div>
+                <div style="text-align:right">
+                  <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:700;background:${sc.bg};color:${sc.color}">${sc.emoji}</span>
+                </div>
+              </div>
+              <!-- Expanded details -->
+              ${expanded?`
+              <div style="padding:12px;background:var(--pink-pale);border-top:1px solid var(--border)">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                  <div>
+                    <div class="venue-field-label" style="margin-bottom:4px">Category</div>
+                    <input class="vendor-field-input" data-vfield="${v.id}" data-field="category" value="${esc(v.category||'')}" placeholder="e.g. Florist" style="font-size:12px;padding:6px 8px"/>
+                  </div>
+                  <div>
+                    <div class="venue-field-label" style="margin-bottom:4px">Status</div>
+                    <select class="vendor-field-select" data-vfield="${v.id}" data-field="status" style="font-size:12px;padding:6px 8px">
+                      ${Object.keys(vendorStatusConfig).map(s=>`<option value="${s}" ${v.status===s?'selected':''}>${s}</option>`).join('')}
+                    </select>
+                  </div>
+                </div>
+                <div style="margin-bottom:8px">
+                  <div class="venue-field-label" style="margin-bottom:4px">Vendor name</div>
+                  <input class="vendor-field-input" data-vfield="${v.id}" data-field="name" value="${esc(v.name||'')}" placeholder="e.g. Jane Murphy Photography" style="font-size:13px"/>
+                </div>
+                <div style="margin-bottom:8px">
+                  <div class="venue-field-label" style="margin-bottom:4px">Contact</div>
+                  <input class="vendor-field-input" data-vfield="${v.id}" data-field="contact" value="${esc(v.contact||'')}" placeholder="Phone or email" style="font-size:13px"/>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                  <div>
+                    <div class="venue-field-label" style="margin-bottom:4px">Estimated (€)</div>
+                    <input class="vendor-field-input" data-vfield="${v.id}" data-field="price" value="${esc(v.price||'')}" placeholder="0" type="number" min="0" style="font-size:13px"/>
+                  </div>
+                  <div>
+                    <div class="venue-field-label" style="margin-bottom:4px">Confirmed (€)</div>
+                    <input class="budget-actual-input${b?.actual?' has-value':''}" data-vendor-actual="${v.id}" data-actual="${b?.id||''}" value="${esc(b?.actual||'')}" placeholder="0" type="number" min="0" style="font-size:13px;width:100%"/>
+                  </div>
+                </div>
+                <div style="margin-bottom:10px">
+                  <div class="venue-field-label" style="margin-bottom:4px">Notes</div>
+                  <textarea class="vendor-notes-field" data-vid="${v.id}" rows="2" placeholder="Add notes…" style="font-size:13px">${esc(v.notes||'')}</textarea>
+                </div>
+                <button class="btn-ghost" style="font-size:12px;padding:8px;color:#e74c3c;border-color:#e74c3c;width:100%" data-delete-vendor="${v.id}">Delete vendor</button>
+              </div>`:``}
+            </div>`;
+        } else {
+          const {b} = item;
+          const estVal = parseFloat(b.estimated)||0;
+          const actVal = parseFloat(b.actual)||0;
+          const diff = estVal && actVal ? actVal - estVal : null;
+          const diffSymbol = diff===null ? '' : diff>0 ? '<span style="color:#e74c3c;font-size:10px">▲</span>' : diff<0 ? '<span style="color:var(--green);font-size:10px">▼</span>' : '<span style="color:var(--muted);font-size:10px">✓</span>';
+          const bExpanded = b.expanded;
+          return `
+            <div style="border-top:1px solid var(--border)">
+              <div style="display:grid;grid-template-columns:1fr 70px 70px 28px;padding:11px 12px;align-items:center;cursor:pointer;background:${bExpanded?'var(--pink-pale)':'transparent'}" data-expand-budget="${b.id}">
+                <span style="font-size:13px;color:var(--text)">${esc(b.item)}</span>
+                <span style="text-align:right;font-size:12px;color:var(--blue);font-weight:600;white-space:nowrap">${diffSymbol}${b.estimated?`€${parseFloat(b.estimated).toLocaleString()}`:'—'}</span>
+                <span style="text-align:right;font-size:12px;color:${b.actual?'var(--green)':'var(--muted)'};font-weight:${b.actual?'700':'400'}">${b.actual?`€${parseFloat(b.actual).toLocaleString()}`:'—'}</span>
+                <span style="text-align:right;font-size:16px;color:var(--muted)">${bExpanded?'▲':'▼'}</span>
+              </div>
+              ${bExpanded?`
+              <div style="padding:12px;background:var(--pink-pale);border-top:1px solid var(--border)">
+                <div style="margin-bottom:8px">
+                  <div class="venue-field-label" style="margin-bottom:4px">Item name</div>
+                  <input class="budget-item-name-edit" data-bid="${b.id}" value="${esc(b.item)}" style="font-size:13px;padding:8px 10px;width:100%;box-sizing:border-box"/>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                  <div>
+                    <div class="venue-field-label" style="margin-bottom:4px">Estimated (€)</div>
+                    <input class="budget-est-edit" data-bid="${b.id}" value="${esc(b.estimated)}" placeholder="0" type="number" min="0" style="font-size:13px;padding:8px 10px;width:100%;box-sizing:border-box"/>
+                  </div>
+                  <div>
+                    <div class="venue-field-label" style="margin-bottom:4px">Confirmed (€)</div>
+                    <input class="budget-actual-input${b.actual?' has-value':''}" data-actual="${b.id}" value="${esc(b.actual)}" placeholder="0" type="number" min="0" style="font-size:13px;padding:8px 10px;width:100%;box-sizing:border-box"/>
+                  </div>
+                </div>
+                <button class="btn-ghost" style="font-size:12px;padding:8px;color:#e74c3c;border-color:#e74c3c;width:100%" data-delete-budget="${b.id}">Delete item</button>
+              </div>`:''}
+            </div>`;
+        }
+      }).join('')}
+
+      <!-- Total row -->
+      <div style="border-top:2px solid var(--border);display:grid;grid-template-columns:1fr 70px 70px 28px;padding:11px 12px;background:var(--pink-pale);align-items:center">
+        <span style="font-size:13px;font-weight:700;color:var(--pink-dark)">Total</span>
+        <span style="text-align:right;font-size:13px;font-weight:700;color:var(--blue)">€${estimated.toLocaleString()}</span>
+        <span style="text-align:right;font-size:13px;font-weight:700;color:var(--pink-dark)">€${spent.toLocaleString()}</span>
+        <span></span>
+      </div>
+    </div>
+  `;
+}
+
+// ── VENUES ──
+function renderVenues() {
+  return `
+    ${state.venues.map(v => {
+      const sc = statusConfig[v.status] || statusConfig['Enquire'];
+      return `
+        <div class="card venue-card" style="margin-bottom:10px">
+          <div class="venue-header">
+            <div class="venue-name">${esc(v.name)}</div>
+            <div class="venue-header-right">
+              <span class="status-badge" style="background:${sc.bg};color:${sc.color}">${sc.emoji} ${esc(v.status)}</span>
+              <button class="icon-btn blue" data-edit-venue="${v.id}">✎</button>
+              <button class="icon-btn muted" data-delete-venue="${v.id}">×</button>
+            </div>
+          </div>
+          <div class="venue-location">📍 ${esc(v.location)}</div>
+          <div class="venue-grid">
+            <div>
+              <div class="venue-field-label">Contact</div>
+              <div class="venue-field-value">${esc(v.contact||'—')}</div>
+            </div>
+            <div>
+              <div class="venue-field-label">Price quoted</div>
+              <div class="venue-field-value" style="${v.price?'font-weight:600;color:var(--pink-dark)':'color:var(--muted)'}">${esc(v.price||'Not yet')}</div>
+            </div>
+          </div>
+          <div class="venue-field-label" style="margin-top:8px;margin-bottom:4px">Notes</div>
+          <textarea class="venue-notes-field" data-vid="${v.id}" rows="2" placeholder="Add notes…">${esc(v.notes||'')}</textarea>
+        </div>`;
+    }).join('')}
+    <button class="dashed-card" id="addVenueBtn">${flowerSVG(14,'#C2698F',0.8)} Add a venue</button>
+  `;
+}
+
+// ── MODALS / INLINE FORMS ──
+function showModal(html, onSubmit) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(58,42,48,0.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:680px;max-height:85vh;overflow-y:auto">
+      ${html}
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('[data-cancel]')?.addEventListener('click', () => overlay.remove());
+  overlay.querySelector('[data-submit]')?.addEventListener('click', () => {
+    if (onSubmit(overlay)) overlay.remove();
+  });
+  overlay.addEventListener('click', e => { if (e.target===overlay) overlay.remove(); });
+  setTimeout(() => overlay.querySelector('input')?.focus(), 50);
+}
+
+function taskForm(task={}) {
+  return `
+    <div style="font-size:12px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">
+      ${flowerSVG(12,'#C2698F',0.8)} ${task.id ? 'Edit Task' : 'Add Task'}
+    </div>
+    <div class="form-row"><input id="mTaskText" placeholder="Task description" value="${esc(task.task||'')}" /></div>
+    <div class="form-row">
+      <select id="mTaskSection">
+        ${[...new Set(state.checklist.map(t=>t.section))].map(s =>
+          `<option value="${esc(s)}" ${task.section===s?'selected':''}>${esc(s)}</option>`
+        ).join('')}
+      </select>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn-primary" data-submit>Save</button>
+      <button class="btn-ghost" data-cancel>Cancel</button>
+    </div>`;
+}
+
+function venueForm(v={}) {
+  return `
+    <div style="font-size:12px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">
+      ${flowerSVG(12,'#C2698F',0.8)} ${v.id ? 'Edit Venue' : 'Add Venue'}
+    </div>
+    <div class="form-row"><input id="mVName" placeholder="Venue name" value="${esc(v.name||'')}" /></div>
+    <div class="form-row"><input id="mVLoc" placeholder="Location" value="${esc(v.location||'')}" /></div>
+    <div class="form-row"><input id="mVContact" placeholder="Contact details" value="${esc(v.contact||'')}" /></div>
+    <div class="form-row"><input id="mVPrice" placeholder="Price quoted (or leave blank)" value="${esc(v.price||'')}" /></div>
+    <div class="form-row"><textarea id="mVNotes" rows="2" placeholder="Notes…">${esc(v.notes||'')}</textarea></div>
+    <div class="form-row">
+      <select id="mVStatus">
+        ${Object.keys(statusConfig).map(s=>`<option value="${s}" ${v.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn-primary" data-submit>Save</button>
+      <button class="btn-ghost" data-cancel>Cancel</button>
+    </div>`;
+}
+
+// ── SETTINGS ──
+function renderSettings() {
+  const { name1, name2, ceiling } = state.settings;
+  return `
+    <div class="card" style="padding:18px;margin-bottom:12px">
+      <div class="section-label" style="margin-bottom:14px">${flowerSVG(12,'#C2698F',0.8)} Names in Header</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+        Enter your names below and they'll appear in the header as:<br>
+        <span style="font-family:'Playfair Display',serif;color:var(--pink);font-size:15px">Name 💍 Name</span>
+      </div>
+      <div class="form-row" style="margin-bottom:8px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Person 1</label>
+        <input id="settingsName1" placeholder="First name" value="${esc(name1)}" />
+      </div>
+      <div class="form-row" style="margin-bottom:14px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Person 2</label>
+        <input id="settingsName2" placeholder="First name" value="${esc(name2)}" />
+      </div>
+      <button class="btn-primary" id="saveSettingsBtn">Save names</button>
+      ${name1 && name2 ? `
+        <div style="margin-top:14px;text-align:center;padding:12px;background:var(--pink-pale);border-radius:10px">
+          <span style="font-family:'Playfair Display',serif;font-size:20px;color:var(--pink-dark)">${esc(name1)} 💍 ${esc(name2)}</span>
+        </div>` : ''}
+    </div>
+
+    <div class="card" style="padding:18px">
+      <div class="section-label" style="margin-bottom:14px">${flowerSVG(12,'#C2698F',0.8)} Budget Ceiling</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+        Set your total wedding budget. The progress bar in Budget will track against this.
+      </div>
+      <div class="form-row" style="margin-bottom:14px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Total budget (€)</label>
+        <input id="settingsCeiling" type="number" placeholder="10000" value="${esc(ceiling||10000)}" />
+      </div>
+      <button class="btn-primary" id="saveCeilingBtn">Save budget</button>
+      <div style="margin-top:10px;text-align:center;font-size:13px;color:var(--muted)">
+        Current ceiling: <strong style="color:var(--pink-dark)">€${(parseFloat(ceiling)||10000).toLocaleString()}</strong>
+      </div>
+    </div>`;
+}
+
+// ── EVENT BINDING ──
+function bindEvents() {
+  const c = document.getElementById('content');
+
+  // Toggle task
+  c.querySelectorAll('[data-toggle]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = parseInt(el.dataset.toggle);
+      const t = state.checklist.find(t=>t.id===id);
+      if (t) { t.done = !t.done; saveAll(); render(); }
+    });
+  });
+
+  // Edit task
+  c.querySelectorAll('[data-edit-task]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = parseInt(el.dataset.editTask);
+      const task = state.checklist.find(t=>t.id===id);
+      showModal(taskForm(task), overlay => {
+        const text = overlay.querySelector('#mTaskText').value.trim();
+        const section = overlay.querySelector('#mTaskSection').value;
+        if (!text) return false;
+        task.task = text; task.section = section;
+        saveAll(); render(); return true;
+      });
+    });
+  });
+
+  // Delete task
+  c.querySelectorAll('[data-delete-task]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = parseInt(el.dataset.deleteTask);
+      if (confirm('Remove this task?')) {
+        state.checklist = state.checklist.filter(t=>t.id!==id);
+        saveAll(); render();
+      }
+    });
+  });
+
+  // Add task
+  c.querySelectorAll('[data-add-task]').forEach(el => {
+    el.addEventListener('click', () => {
+      const section = el.dataset.addTask;
+      showModal(taskForm({section}), overlay => {
+        const text = overlay.querySelector('#mTaskText').value.trim();
+        const sec = overlay.querySelector('#mTaskSection').value;
+        if (!text) return false;
+        if (isDuplicate(state.checklist, 'task', text)) {
+          dupAlert(overlay, 'mTaskText', `"${text}" already exists!`);
+          return false;
+        }
+        state.checklist.push({ id: Date.now(), section: sec, task: text, done: false });
+        saveAll(); render(); return true;
+      });
+    });
+  });
+
+  // Toggle add guest form
+  const toggleAddGuest = document.getElementById('toggleAddGuest');
+  if (toggleAddGuest) toggleAddGuest.addEventListener('click', () => { state.addGuestOpen = !state.addGuestOpen; render(); });
+  const closeAddGuest = document.getElementById('closeAddGuest');
+  if (closeAddGuest) closeAddGuest.addEventListener('click', () => { state.addGuestOpen = false; render(); });
+
+  // New guest form tag buttons (RSVP, +1, side)
+  let _newRsvp = 'Pending', _newPlusOne = false, _newSide = 'Both';
+  function updateNewGuestTags() {
+    ['Yes','Pending','No'].forEach(s => {
+      const btn = document.getElementById(`newRsvp-${s}`);
+      if (!btn) return;
+      btn.className = `tag-btn ${_newRsvp===s?(s==='Yes'?'active-green':'active-pink'):''}`;
+      btn.style.cssText = 'font-size:11px;padding:3px 10px';
+    });
+    const p1 = document.getElementById('newPlusOne');
+    if (p1) { p1.className = `tag-btn ${_newPlusOne?'active-pink':''}`; p1.style.cssText='font-size:11px;padding:3px 10px'; p1.textContent = _newPlusOne?'👫 +1':'👤 +1'; }
+    const { name1, name2 } = state.settings;
+    const brideName = name1||'Bride', groomName = name2||'Groom';
+    ['Bride','Groom','Both'].forEach(side => {
+      const btn = document.getElementById(`newSide-${side}`);
+      if (!btn) return;
+      const label = side==='Bride'?brideName:side==='Groom'?groomName:'Both';
+      btn.className = `tag-btn ${_newSide===side?(side==='Bride'?'active-pink':side==='Groom'?'active-blue':'active-green'):''}`;
+      btn.style.cssText='font-size:11px;padding:3px 10px';
+      btn.textContent = label;
+    });
+  }
+  c.querySelectorAll('[data-new-rsvp]').forEach(el => {
+    el.addEventListener('click', () => { _newRsvp = el.dataset.newRsvp; updateNewGuestTags(); });
+  });
+  const newPlusOneBtn = document.getElementById('newPlusOne');
+  if (newPlusOneBtn) newPlusOneBtn.addEventListener('click', () => { _newPlusOne = !_newPlusOne; updateNewGuestTags(); });
+  c.querySelectorAll('[data-new-side]').forEach(el => {
+    el.addEventListener('click', () => { _newSide = el.dataset.newSide; updateNewGuestTags(); });
+  });
+  updateNewGuestTags();
+
+  // Add guest
+  const addGuestBtn = document.getElementById('addGuestBtn');
+  if (addGuestBtn) {
+    addGuestBtn.addEventListener('click', () => {
+      const name = document.getElementById('newGuestName').value.trim();
+      if (!name) return;
+      if (isDuplicate(state.guests, 'name', name)) {
+        const input = document.getElementById('newGuestName');
+        input.style.borderColor = 'var(--pink-dark)';
+        input.value = '';
+        input.placeholder = `"${name}" is already on the list!`;
+        setTimeout(() => { input.style.borderColor = ''; input.placeholder = 'Guest name'; }, 2500);
+        return;
+      }
+      const dietary = document.getElementById('newGuestDietary')?.value.trim()||'';
+      const notes = document.getElementById('newGuestNotes')?.value.trim()||'';
+      state.guests.push({ id: Date.now(), name, rsvp: _newRsvp, plusOne: _newPlusOne, side: _newSide, dietary, notes });
+      _newRsvp = 'Pending'; _newPlusOne = false; _newSide = 'Both';
+      state.addGuestOpen = false;
+      saveAll(); render();
+    });
+  }
+
+  // Guest filter pills
+  c.querySelectorAll('[data-filter]').forEach(el => {
+    el.addEventListener('click', () => {
+      const f = el.dataset.filter;
+      state.guestFilter = state.guestFilter === f ? null : f;
+      render();
+    });
+  });
+  const filterClose = c.querySelector('[data-filter-close]');
+  if (filterClose) filterClose.addEventListener('click', () => { state.guestFilter = null; render(); });
+
+  // Close guest panel
+  c.querySelectorAll('[data-close-guest]').forEach(el => {
+    el.addEventListener('click', () => {
+      const g = state.guests.find(g=>g.id===parseInt(el.dataset.closeGuest));
+      if (g) { g.expanded = false; saveAll(); render(); }
+    });
+  });
+
+  // Edit guest name
+  c.querySelectorAll('.guest-name-edit').forEach(el => {
+    el.addEventListener('change', () => {
+      const g = state.guests.find(g=>g.id===parseInt(el.dataset.gid));
+      if (!g) return;
+      const newName = el.value.trim();
+      if (!newName) { el.value = g.name; return; }
+      if (isDuplicate(state.guests, 'name', newName, g.id)) {
+        el.style.borderColor = 'var(--pink-dark)';
+        el.value = g.name;
+        setTimeout(() => { el.style.borderColor = ''; }, 2000);
+        return;
+      }
+      g.name = newName; saveAll();
+    });
+  });
+
+  // RSVP
+  c.querySelectorAll('[data-rsvp]').forEach(el => {
+    el.addEventListener('click', () => {
+      const g = state.guests.find(g=>g.id===parseInt(el.dataset.rsvp));
+      if (g) { g.rsvp = el.dataset.val; saveAll(); render(); }
+    });
+  });
+
+  // Expand guest card
+  c.querySelectorAll('[data-expand]').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('button') || e.target.closest('input')) return;
+      const id = parseInt(el.dataset.expand);
+      const g = state.guests.find(g=>g.id===id);
+      if (g) {
+        state.guests.forEach(x => { if (x.id!==id) x.expanded=false; });
+        g.expanded = !g.expanded;
+        saveAll(); render();
+      }
+    });
+  });
+
+  // Plus one
+  c.querySelectorAll('[data-plusone]').forEach(el => {
+    el.addEventListener('click', () => {
+      const g = state.guests.find(g=>g.id===parseInt(el.dataset.plusone));
+      if (g) { g.plusOne = !g.plusOne; saveAll(); render(); }
+    });
+  });
+
+  // Side
+  c.querySelectorAll('[data-side]').forEach(el => {
+    el.addEventListener('click', () => {
+      const g = state.guests.find(g=>g.id===parseInt(el.dataset.side));
+      if (g) { g.side = el.dataset.val; saveAll(); render(); }
+    });
+  });
+
+  // Dietary
+  c.querySelectorAll('.guest-dietary').forEach(el => {
+    el.addEventListener('change', () => {
+      const g = state.guests.find(g=>g.id===parseInt(el.dataset.gid));
+      if (g) { g.dietary = el.value; saveAll(); }
+    });
+  });
+
+  // Notes
+  c.querySelectorAll('.guest-notes-field').forEach(el => {
+    el.addEventListener('change', () => {
+      const g = state.guests.find(g=>g.id===parseInt(el.dataset.gid));
+      if (g) { g.notes = el.value; saveAll(); }
+    });
+  });
+
+  // Delete guest
+  c.querySelectorAll('[data-delete-guest]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (confirm('Remove this guest?')) {
+        state.guests = state.guests.filter(g=>g.id!==parseInt(el.dataset.deleteGuest));
+        saveAll(); render();
+      }
+    });
+  });
+
+  // Vendor confirmed cost (creates budget line if needed)
+  c.querySelectorAll('[data-vendor-actual]').forEach(el => {
+    el.addEventListener('input', () => {
+      const vendorId = parseInt(el.dataset.vendorActual);
+      const vendor = state.vendors.find(v=>v.id===vendorId);
+      if (!vendor) return;
+      let b = state.budget.find(x=>x.vendorId===vendorId);
+      if (!b) {
+        // Create budget line on first entry
+        b = {
+          id: Date.now(),
+          vendorId,
+          item: vendor.name ? `${vendor.category} — ${vendor.name}` : vendor.category,
+          estimated: vendor.price || '',
+          actual: '',
+        };
+        state.budget.push(b);
+        el.dataset.actual = b.id;
+      }
+      b.actual = el.value;
+      el.classList.toggle('has-value', !!el.value);
+      saveAll();
+      renderHeader();
+      const bar = document.querySelector('.finance-progress-bar');
+      if (bar) {
+        const spent = state.budget.reduce((s,b)=>s+(parseFloat(b.actual)||0),0);
+        const CEILING = parseFloat(state.settings.ceiling)||10000;
+        const pct = Math.min((spent/CEILING)*100,100);
+        bar.style.width = pct + '%';
+      }
+    });
+  });
+
+  // Budget actual
+  c.querySelectorAll('[data-actual]').forEach(el => {
+    el.addEventListener('input', () => {
+      const id = parseInt(el.dataset.actual);
+      if (!id) return;
+      const b = state.budget.find(b=>b.id===id);
+      if (b) {
+        b.actual = el.value;
+        el.classList.toggle('has-value', !!el.value);
+        saveAll();
+        renderHeader();
+        // Re-render finance tab stats without full re-render (avoid losing focus)
+        const spent = state.budget.reduce((s,b)=>s+(parseFloat(b.actual)||0),0);
+        const CEILING = parseFloat(state.settings.ceiling)||10000;
+        const pct = Math.min((spent/CEILING)*100,100);
+        const over = spent > CEILING;
+        const remaining = CEILING - spent;
+        // Update progress bar if visible
+        const bar = document.querySelector('.finance-progress-bar');
+        if (bar) {
+          bar.style.width = pct + '%';
+          bar.style.background = over ? '#e74c3c' : 'linear-gradient(90deg,var(--pink),var(--blue))';
+        }
+      }
+    });
+  });
+
+  // Expand budget item
+  c.querySelectorAll('[data-expand-budget]').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('button') || e.target.closest('input')) return;
+      const id = parseInt(el.dataset.expandBudget);
+      const b = state.budget.find(b=>b.id===id);
+      if (b) {
+        state.budget.forEach(x => { if (x.id!==id) x.expanded=false; });
+        b.expanded = !b.expanded;
+        saveAll(); render();
+      }
+    });
+  });
+
+  // Budget item name inline edit
+  c.querySelectorAll('.budget-item-name-edit').forEach(el => {
+    el.addEventListener('change', () => {
+      const b = state.budget.find(b=>b.id===parseInt(el.dataset.bid));
+      if (b && el.value.trim()) { b.item = el.value.trim(); saveAll(); }
+    });
+  });
+
+  // Budget estimated inline edit
+  c.querySelectorAll('.budget-est-edit').forEach(el => {
+    el.addEventListener('change', () => {
+      const b = state.budget.find(b=>b.id===parseInt(el.dataset.bid));
+      if (b) { b.estimated = el.value; saveAll(); render(); }
+    });
+  });
+
+  // Delete budget
+  c.querySelectorAll('[data-delete-budget]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (confirm('Remove this budget item?')) {
+        state.budget = state.budget.filter(b=>b.id!==parseInt(el.dataset.deleteBudget));
+        saveAll(); render();
+      }
+    });
+  });
+
+  // Toggle / close add vendor
+  const toggleAddVendor = document.getElementById('toggleAddVendor');
+  if (toggleAddVendor) toggleAddVendor.addEventListener('click', () => { state.addVendorOpen = !state.addVendorOpen; state.addBudgetOpen = false; render(); });
+  const closeAddVendor = document.getElementById('closeAddVendor');
+  if (closeAddVendor) closeAddVendor.addEventListener('click', () => { state.addVendorOpen = false; render(); });
+
+  // Add vendor inline
+  const addVendorBtn = document.getElementById('addVendorBtn');
+  if (addVendorBtn) {
+    addVendorBtn.addEventListener('click', () => {
+      const cat   = document.getElementById('newVendorCat').value.trim() || 'Other';
+      const vname = document.getElementById('newVendorName').value.trim();
+      if (vname && isDuplicate(state.vendors, 'name', vname)) {
+        const el = document.getElementById('newVendorName');
+        el.style.borderColor = 'var(--pink-dark)'; el.value = '';
+        el.placeholder = `"${vname}" already exists!`;
+        setTimeout(() => { el.style.borderColor = ''; el.placeholder = 'e.g. Jane Murphy Photography'; }, 2500);
+        return;
+      }
+      if (!vname && isDuplicate(state.vendors, 'category', cat)) {
+        alert(`A "${cat}" vendor already exists. Give it a name to add another.`);
+        return;
+      }
+      const newVendor = {
+        id: Date.now(), category: cat, name: vname,
+        contact: document.getElementById('newVendorContact').value.trim(),
+        price:   document.getElementById('newVendorPrice').value,
+        notes:   '',
+        status:  document.getElementById('newVendorStatus').value,
+      };
+      state.vendors.push(newVendor);
+      syncVendorToBudget(newVendor);
+      state.addVendorOpen = false;
+      saveAll(); render();
+    });
+  }
+
+  // Toggle / close add budget
+  const toggleAddBudget = document.getElementById('toggleAddBudget');
+  if (toggleAddBudget) toggleAddBudget.addEventListener('click', () => { state.addBudgetOpen = !state.addBudgetOpen; state.addVendorOpen = false; render(); });
+  const closeAddBudget = document.getElementById('closeAddBudget');
+  if (closeAddBudget) closeAddBudget.addEventListener('click', () => { state.addBudgetOpen = false; render(); });
+
+  // Add budget inline
+  const addBudgetBtn = document.getElementById('addBudgetBtn');
+  if (addBudgetBtn) {
+    addBudgetBtn.addEventListener('click', () => {
+      const name = document.getElementById('newBudgetItem')?.value.trim();
+      if (!name) return;
+      if (isDuplicate(state.budget, 'item', name)) {
+        const el = document.getElementById('newBudgetItem');
+        el.style.borderColor = 'var(--pink-dark)'; el.value = '';
+        el.placeholder = `"${name}" already exists!`;
+        setTimeout(() => { el.style.borderColor = ''; el.placeholder = 'e.g. Transport'; }, 2500);
+        return;
+      }
+      state.budget.push({
+        id: Date.now(), item: name,
+        estimated: document.getElementById('newBudgetEst').value,
+        actual:    document.getElementById('newBudgetActual').value,
+      });
+      state.addBudgetOpen = false;
+      saveAll(); render();
+    });
+  }
+
+  // Venue notes inline
+  c.querySelectorAll('.venue-notes-field').forEach(el => {
+    el.addEventListener('change', () => {
+      const v = state.venues.find(v=>v.id===parseInt(el.dataset.vid));
+      if (v) { v.notes = el.value; saveAll(); }
+    });
+  });
+
+  // Edit venue
+  c.querySelectorAll('[data-edit-venue]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = parseInt(el.dataset.editVenue);
+      const venue = state.venues.find(v=>v.id===id);
+      showModal(venueForm(venue), overlay => {
+        const name = overlay.querySelector('#mVName').value.trim();
+        if (!name) return false;
+        venue.name    = name;
+        venue.location= overlay.querySelector('#mVLoc').value.trim();
+        venue.contact = overlay.querySelector('#mVContact').value.trim();
+        venue.price   = overlay.querySelector('#mVPrice').value.trim();
+        venue.notes   = overlay.querySelector('#mVNotes').value.trim();
+        venue.status  = overlay.querySelector('#mVStatus').value;
+        saveAll(); render(); return true;
+      });
+    });
+  });
+
+  // Delete venue
+  c.querySelectorAll('[data-delete-venue]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (confirm('Remove this venue?')) {
+        state.venues = state.venues.filter(v=>v.id!==parseInt(el.dataset.deleteVenue));
+        saveAll(); render();
+      }
+    });
+  });
+
+  // Add venue
+  const addVenueBtn = document.getElementById('addVenueBtn');
+  if (addVenueBtn) {
+    addVenueBtn.addEventListener('click', () => {
+      showModal(venueForm(), overlay => {
+        const name = overlay.querySelector('#mVName').value.trim();
+        if (!name) return false;
+        if (isDuplicate(state.venues, 'name', name)) {
+          dupAlert(overlay, 'mVName', `"${name}" already exists!`);
+          return false;
+        }
+        state.venues.push({
+          id: Date.now(),
+          name,
+          location: overlay.querySelector('#mVLoc').value.trim(),
+          contact:  overlay.querySelector('#mVContact').value.trim(),
+          price:    overlay.querySelector('#mVPrice').value.trim(),
+          notes:    overlay.querySelector('#mVNotes').value.trim(),
+          status:   overlay.querySelector('#mVStatus').value,
+        });
+        saveAll(); render(); return true;
+      });
+    });
+  }
+
+  // Expand vendor row
+  c.querySelectorAll('[data-expand-vendor]').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('select')) return;
+      const id = parseInt(el.dataset.expandVendor);
+      const v = state.vendors.find(v=>v.id===id);
+      if (v) {
+        state.vendors.forEach(x => { if (x.id!==id) x.expanded=false; });
+        v.expanded = !v.expanded;
+        saveAll(); render();
+      }
+    });
+  });
+
+  // Vendor inline field edits (name, contact, price, category, status)
+  c.querySelectorAll('.vendor-field-input').forEach(el => {
+    el.addEventListener('change', () => {
+      const v = state.vendors.find(v=>v.id===parseInt(el.dataset.vfield));
+      if (!v) return;
+      v[el.dataset.field] = el.value.trim();
+      if (el.dataset.field === 'price') syncVendorToBudget(v);
+      saveAll();
+    });
+  });
+  c.querySelectorAll('.vendor-field-select').forEach(el => {
+    el.addEventListener('change', () => {
+      const v = state.vendors.find(v=>v.id===parseInt(el.dataset.vfield));
+      if (!v) return;
+      v[el.dataset.field] = el.value;
+      saveAll(); render();
+    });
+  });
+
+  // Vendor notes
+  c.querySelectorAll('.vendor-notes-field').forEach(el => {
+    el.addEventListener('change', () => {
+      const v = state.vendors.find(v=>v.id===parseInt(el.dataset.vid));
+      if (v) { v.notes = el.value; saveAll(); }
+    });
+  });
+
+  // Delete vendor
+  c.querySelectorAll('[data-delete-vendor]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (confirm('Remove this vendor?')) {
+        const id = parseInt(el.dataset.deleteVendor);
+        removeVendorFromBudget(id);
+        state.vendors = state.vendors.filter(v=>v.id!==id);
+        saveAll(); render();
+      }
+    });
+  });
+
+  // Save settings
+  const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+  if (saveSettingsBtn) {
+    saveSettingsBtn.addEventListener('click', () => {
+      state.settings.name1 = document.getElementById('settingsName1').value.trim();
+      state.settings.name2 = document.getElementById('settingsName2').value.trim();
+      saveAll(); render();
+    });
+  }
+
+  // Save ceiling
+  const saveCeilingBtn = document.getElementById('saveCeilingBtn');
+  if (saveCeilingBtn) {
+    saveCeilingBtn.addEventListener('click', () => {
+      const val = parseFloat(document.getElementById('settingsCeiling').value);
+      if (val > 0) { state.settings.ceiling = val; saveAll(); render(); }
+    });
+  }
+}
+
+// ── TOUCH DRAG AND DROP ──
+function initDragDrop() {
+  let dragging = null;
+  let dragId = null;
+  let ghost = null;
+  let startX, startY;
+
+  document.querySelectorAll('.guest-card').forEach(card => {
+    let pressTimer;
+
+    card.addEventListener('touchstart', e => {
+      const touch = e.touches[0];
+      startX = touch.clientX; startY = touch.clientY;
+      pressTimer = setTimeout(() => {
+        dragId = parseInt(card.dataset.guestId);
+        dragging = card;
+        card.classList.add('dragging');
+        ghost = card.cloneNode(true);
+        ghost.style.cssText = `position:fixed;z-index:999;pointer-events:none;width:${card.offsetWidth}px;opacity:0.85;transform:scale(1.05);transition:none;border:2px solid var(--pink)`;
+        ghost.style.left = (touch.clientX - card.offsetWidth/2) + 'px';
+        ghost.style.top = (touch.clientY - 40) + 'px';
+        document.body.appendChild(ghost);
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, 400);
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dx > 8 || dy > 8) clearTimeout(pressTimer);
+      if (!dragging) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      ghost.style.left = (touch.clientX - card.offsetWidth/2) + 'px';
+      ghost.style.top = (touch.clientY - 40) + 'px';
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      document.querySelectorAll('.guest-card').forEach(c=>c.classList.remove('drag-over'));
+      const target = el?.closest('.guest-card');
+      if (target && target !== dragging) target.classList.add('drag-over');
+      const col = el?.closest('.guest-col-list');
+      if (col) col.style.background = 'rgba(194,105,143,0.05)';
+    }, { passive: false });
+
+    card.addEventListener('touchend', e => {
+      clearTimeout(pressTimer);
+      if (!dragging) return;
+      const touch = e.changedTouches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const targetCard = el?.closest('.guest-card');
+      const targetCol = el?.closest('.guest-col-list');
+
+      if (targetCol) {
+        const newSide = targetCol.dataset.col;
+        const g = state.guests.find(g=>g.id===dragId);
+        if (g) { g.side = newSide; saveAll(); }
+      }
+      if (targetCard && targetCard !== dragging) {
+        const targetId = parseInt(targetCard.dataset.guestId);
+        const fromIdx = state.guests.findIndex(g=>g.id===dragId);
+        const toIdx = state.guests.findIndex(g=>g.id===targetId);
+        if (fromIdx>-1 && toIdx>-1) {
+          const [moved] = state.guests.splice(fromIdx,1);
+          state.guests.splice(toIdx,0,moved);
+          saveAll();
+        }
+      }
+
+      dragging.classList.remove('dragging');
+      document.querySelectorAll('.guest-card').forEach(c=>c.classList.remove('drag-over'));
+      document.querySelectorAll('.guest-col-list').forEach(c=>c.style.background='');
+      ghost?.remove(); ghost=null; dragging=null; dragId=null;
+      render();
+    });
+
+    card.addEventListener('touchcancel', () => {
+      clearTimeout(pressTimer);
+      if (dragging) dragging.classList.remove('dragging');
+      ghost?.remove(); ghost=null; dragging=null; dragId=null;
+      document.querySelectorAll('.guest-card').forEach(c=>c.classList.remove('drag-over'));
+    });
+  });
+}
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ── INIT ──
+initTabs();
+render();
+</script>
+</body>
+</html>
