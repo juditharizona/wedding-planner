@@ -567,7 +567,7 @@ function renderGuests() {
           ${g.dietary ? `<span style="font-size:9px;color:var(--muted)">· 🍽</span>` : ''}
           ${g.notes ? `<span style="font-size:9px;color:var(--muted)">· 📝</span>` : ''}
         </div>
-      </div>`;
+      </div>${expandedPanel(g)}`;
   }
 
   function expandedPanel(g) {
@@ -597,8 +597,6 @@ function renderGuests() {
         <input class="guest-notes-field" data-gid="${g.id}" placeholder="Notes (optional)" value="${esc(g.notes||'')}" style="font-size:13px" />
       </div>`;
   }
-
-  const expandedGuest = state.guests.find(g=>g.expanded);
 
   const activeFilter = state.guestFilter || null;
   const filterGuests = activeFilter ? state.guests.filter(g => g.rsvp === activeFilter) : [];
@@ -668,9 +666,6 @@ function renderGuests() {
       <input id="newGuestNotes" placeholder="Notes (optional)" style="margin-bottom:10px" />
       <button class="btn-primary" id="addGuestBtn">Add to guest list</button>
     </div>` : ''}
-
-    <!-- Expanded panel -->
-    ${expandedGuest ? expandedPanel(expandedGuest) : ''}
 
     ${state.guests.length===0 ? `
       <div class="empty-state">${flowerSVG(28,'#C2698F',0.4)}<p>No guests yet — add your first one above!</p></div>
