@@ -206,8 +206,6 @@
     .summary-pill .small { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
     .guest-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-    .guest-columns.has-expanded { grid-template-columns: 1fr; }
-    .guest-columns.has-expanded .guest-col-list:empty { display: none; }
     .guest-col-list { display: flex; flex-direction: column; gap: 8px; }
     .guest-column-header {
       font-size: 10px; font-weight: 700; letter-spacing: 2px;
@@ -286,7 +284,7 @@
 
 <script>
 // ── APP VERSION ── bump both on every push (keep in sync with sw.js CACHE)
-const APP_VERSION = 'v38';
+const APP_VERSION = 'v39';
 const APP_UPDATED = '12 Jul 2026';
 
 // ── DATA ──
@@ -606,7 +604,6 @@ function renderGuests() {
 
   const activeFilter = state.guestFilter || null;
   const filterGuests = activeFilter ? state.guests.filter(g => g.rsvp === activeFilter) : [];
-  const anyExpanded = state.guests.some(g => g.expanded);
 
   return `
     <div class="summary-pills">
@@ -677,7 +674,7 @@ function renderGuests() {
     ${state.guests.length===0 ? `
       <div class="empty-state">${flowerSVG(28,'#C2698F',0.4)}<p>No guests yet — add your first one above!</p></div>
     ` : `
-      <div class="guest-columns${anyExpanded?' has-expanded':''}" id="guestColumns">
+      <div class="guest-columns" id="guestColumns">
         <div>
           <div class="guest-column-header" style="color:var(--pink)">${flowerSVG(11,'#C2698F',0.7)} ${esc(brideName)} (${brideCount})</div>
           <div class="guest-col-list" data-col="Bride">
@@ -693,7 +690,7 @@ function renderGuests() {
       </div>
       ${bothGuests.length ? `
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;text-align:center;margin:4px 0 6px">Both sides</div>
-        <div class="guest-columns${anyExpanded?' has-expanded':''}">
+        <div class="guest-columns">
           <div class="guest-col-list" data-col="Both">
             ${bothGuests.filter((_,i)=>i%2===0).map(guestCard).join('')}
           </div>
