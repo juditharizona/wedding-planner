@@ -95,7 +95,6 @@
       cursor: pointer; border: 1.5px solid transparent; background: none; min-height: 42px;
     }
     .btn-save, .btn-add { background: linear-gradient(135deg, var(--pink), var(--pink-dark)); color: #fff; }
-    .btn-edit { border-color: var(--pink); color: var(--pink); background: #fff; }
     .btn-cancel { border-color: var(--border); color: var(--muted); background: #fff; }
     .btn-del { border-color: var(--border); color: var(--red); background: #fff; flex: 0 0 auto; }
     .btn-danger { background: var(--red); color: #fff; }
@@ -126,12 +125,8 @@
     .plus1 { font-size: 10px; background: var(--pink-light); color: var(--pink); border-radius: 6px; padding: 1px 5px; font-weight: 700; margin-left: 4px; vertical-align: 1px; }
     .muted-note { font-style: italic; color: var(--muted); font-weight: 400; }
 
-    /* Read-only details */
-    .details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .details .full { grid-column: 1 / -1; }
-    .k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
-    .v { font-size: 14px; color: var(--text); word-break: break-word; white-space: pre-wrap; }
-    .v.empty-v { color: var(--muted); }
+    .info { font-size: 13px; margin-bottom: 12px; }
+    .item.pinned:not(.open) .item-head { background: var(--pink-pale); }
 
     /* Forms */
     .form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -178,9 +173,21 @@
       display: flex; justify-content: space-between; align-items: center; font-size: 12px;
       background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; margin-bottom: 12px;
     }
-    .col-head { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin: 16px 2px 8px; }
-    .guest-list.drop-hover { background: rgba(194,105,143,0.06); border-radius: var(--radius); }
-    .guest-item.dragging { opacity: 0.4; }
+    .col-head { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin: 16px 2px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .grow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .gcell { min-width: 0; border-radius: var(--radius); }
+    .gcell.drop-hover { background: rgba(194,105,143,0.10); outline: 2px dashed var(--pink); outline-offset: 2px; }
+    .gcard {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+      height: 64px; padding: 10px 12px; cursor: pointer; user-select: none;
+      display: flex; flex-direction: column; justify-content: center; gap: 4px;
+    }
+    .gcard.open { border-color: var(--pink); background: var(--pink-pale); }
+    .gcard.dragging { opacity: 0.4; }
+    .gcard .title { font-size: 13px; }
+    .gline { display: flex; gap: 6px; align-items: center; font-size: 11px; white-space: nowrap; overflow: hidden; }
+    .gpanel { margin-bottom: 8px; }
+    .gpanel .form-title { font-size: 12px; font-weight: 700; color: var(--pink); margin-bottom: 12px; }
 
     /* ── FINANCE ── */
     .fin-grid { display: grid; grid-template-columns: 1fr 74px 74px 14px; gap: 6px; align-items: center; width: 100%; }
@@ -236,7 +243,7 @@
 
 <script>
 // ── APP VERSION ── bump both on every push (keep in sync with sw.js CACHE)
-const APP_VERSION = 'v41';
+const APP_VERSION = 'v42';
 const APP_UPDATED = '27 Sep 2026';
 
 // ── DATA ──
@@ -247,6 +254,7 @@ const STORE = {
   venues: 'wp_venues',
   vendors: 'wp_vendors',
   settings: 'wp_settings',
+  venueCost: 'wp_venue_cost',
 };
 
 const DEFAULT_CHECKLIST = [
@@ -334,6 +342,7 @@ const state = {
   venues:    load(STORE.venues, DEFAULT_VENUES),
   vendors:   load(STORE.vendors, DEFAULT_VENDORS),
   settings:  load(STORE.settings, { name1: '', name2: '', ceiling: 10000 }),
+  venueCost: load(STORE.venueCost, null),
 };
 
 // UI-only state — never saved.
@@ -369,6 +378,14 @@ function migrate() {
     }
   });
   [state.guests, state.venues, state.checklist].forEach(list => list.forEach(x => delete x.expanded));
+  // The venue is a fixed Finance line linked to the Venues tab. First time:
+  // fold an existing "Venue hire" budget item into it so nothing is counted twice.
+  if (!state.venueCost) {
+    const old = state.budget.find(b => /^venue/i.test(b.item || ''));
+    state.venueCost = { venueId: null, estimated: old?.estimated || '', actual: old?.actual || '', notes: old?.notes || '' };
+    if (old) state.budget = state.budget.filter(b => b !== old);
+  }
+  if (state.venueCost.venueId && !state.venues.some(v => v.id === state.venueCost.venueId)) state.venueCost.venueId = null;
   state.guests.forEach(g => {
     if (!g.side) g.side = 'Both';
     if (!g.rsvp) g.rsvp = 'Pending';
@@ -430,8 +447,11 @@ function confirmDelete(what, extra, onYes) {
 }
 
 // Finance: vendors and manual budget items, one shape
+const linkedVenue = () => state.venues.find(v => v.id === state.venueCost.venueId);
 function financeItems() {
+  const vc = state.venueCost;
   return [
+    { kind:'venuecost', id:0, cat:'Venue', est:num(vc.estimated), act:num(vc.actual), hasEst:has(vc.estimated), hasAct:has(vc.actual), raw:vc },
     ...state.vendors.map(v => ({ kind:'vendor', id:v.id, cat: v.category || 'Other', est:num(v.estimated), act:num(v.actual), hasEst:has(v.estimated), hasAct:has(v.actual), raw:v })),
     ...state.budget.map(b => ({ kind:'budget', id:b.id, cat: b.item, est:num(b.estimated), act:num(b.actual), hasEst:has(b.estimated), hasAct:has(b.actual), raw:b })),
   ];
@@ -463,33 +483,23 @@ function selectField(label, f, value, options, full) {
   return `<label class="fld${full ? ' full' : ''}"><span>${esc(label)}</span>
     <select data-f="${f}">${options.map(o => `<option value="${esc(o)}"${o===value?' selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
 }
-function detail(label, value, full) {
-  const empty = !has(value);
-  return `<div${full ? ' class="full"' : ''}><div class="k">${esc(label)}</div><div class="v${empty?' empty-v':''}">${empty ? '—' : value}</div></div>`;
-}
-const viewActions = () => `<div class="actions">
-    <button class="btn btn-edit" data-act="edit">✎ Edit</button>
-    <button class="btn btn-del" data-act="delete">Delete</button>
-  </div>`;
 const editActions = (isNew, withDelete) => `<div class="actions">
     <button class="btn btn-save" data-act="save">${isNew ? 'Add' : 'Save'}</button>
     <button class="btn btn-cancel" data-act="cancel">Cancel</button>
     ${withDelete ? '<button class="btn btn-del" data-act="delete">Delete</button>' : ''}
   </div>`;
 
-// One card for every list. head = always-visible summary; view/form = body.
-function itemCard({ kind, id, head, view, form, flat, extraClass = '', directEdit = false }) {
+// One card for every list: head = always-visible summary; tap it and the card
+// opens straight into its edit form (Save / Cancel / Delete). info = optional
+// line shown above the form. canDelete=false for items that must always exist.
+function itemCard({ kind, id, head, form, flat, extraClass = '', info = '', canDelete = true }) {
   const key = `${kind}:${id}`;
   const isNew = id === 'new';
   const open = isNew || ui.open === key;
-  const editing = isNew || (open && (ui.editing || directEdit));
-  const cls = ['item', flat ? 'flat' : '', open ? 'open' : '', editing ? 'editing' : '', extraClass].filter(Boolean).join(' ');
-  let body = '';
-  if (open) {
-    body = editing
-      ? `<div class="item-body"><div class="form">${form}</div>${editActions(isNew, directEdit && !isNew)}</div>`
-      : `<div class="item-body"><div class="details">${view}</div>${viewActions()}</div>`;
-  }
+  const cls = ['item', flat ? 'flat' : '', open ? 'open editing' : '', extraClass].filter(Boolean).join(' ');
+  const body = open
+    ? `<div class="item-body">${info ? `<div class="info">${info}</div>` : ''}<div class="form">${form}</div>${editActions(isNew, canDelete && !isNew)}</div>`
+    : '';
   return `<div class="${cls}" data-key="${key}">
     ${isNew ? '' : `<div class="item-head" data-act="toggle">${head}<span class="chev">›</span></div>`}
     ${body}
@@ -528,6 +538,8 @@ function render() {
     const el = c.querySelector('[data-autofocus]') || c.querySelector('.item.editing input, .item.editing textarea');
     if (el) { el.focus(); el.closest('.item')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
   }
+  editingRoot()?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  takeSnapshot();
   if (ui.tab === 'guests') initDragDrop();
 }
 
@@ -555,7 +567,7 @@ function renderChecklist() {
         </div>
         <div class="card">
           ${tasks.map(t => itemCard({
-            kind:'task', id:t.id, flat:true, directEdit:true, extraClass: t.done ? 'done-row' : '',
+            kind:'task', id:t.id, flat:true, extraClass: t.done ? 'done-row' : '',
             head: `<button class="check${t.done?' done':''}" data-act="check" data-id="${t.id}" aria-label="Mark done">${t.done?'✓':''}</button>
                    <div class="main"><div class="title task-text${t.done?' done':''}" style="white-space:normal">${esc(t.task)}</div></div>`,
             form: taskForm(t),
@@ -579,25 +591,41 @@ function guestForm(g, auto) {
     field('Dietary requirements', 'dietary', g.dietary, { full:true, placeholder:'e.g. vegetarian, nut allergy' }) +
     field('Notes', 'notes', g.notes, { full:true, area:true, placeholder:'Anything to remember' });
 }
+// Compact half-width card. One tap opens the edit panel directly.
 function guestCard(g) {
-  const { bride, groom } = names();
   const rsvp = RSVP_OPTS.find(o=>o[0]===g.rsvp) || RSVP_OPTS[1];
-  const tone = { green:['var(--green-bg)','var(--green)'], pink:['var(--pink-light)','var(--pink)'], muted:['#f3f3f3','var(--muted)'] }[rsvp[2]];
-  const extras = [g.dietary && '🍽 ' + g.dietary, g.notes && '📝'].filter(Boolean).join(' · ');
-  return itemCard({
-    kind:'guest', id:g.id, extraClass:'guest-item',
-    head: `<div class="main">
-             <div class="title">${esc(g.name)}${g.plusOne ? '<span class="plus1">+1</span>' : ''}</div>
-             ${extras ? `<div class="sub">${esc(extras)}</div>` : ''}
-           </div>
-           <span class="badge" style="background:${tone[0]};color:${tone[1]}">${esc(rsvp[1])}</span>`,
-    view: detail('RSVP', esc(rsvp[1])) +
-          detail('Side', esc(g.side==='Bride' ? bride : g.side==='Groom' ? groom : 'Both')) +
-          detail('Plus one', g.plusOne ? 'Yes — counts as 2' : 'No') +
-          detail('Dietary', esc(g.dietary)) +
-          detail('Notes', esc(g.notes), true),
-    form: guestForm(g),
-  });
+  const color = { green:'var(--green)', pink:'var(--pink)', muted:'var(--muted)' }[rsvp[2]];
+  const open = ui.open === `guest:${g.id}`;
+  return `<div class="gcard${open ? ' open' : ''}" data-key="guest:${g.id}" data-act="toggle">
+    <div class="title">${esc(g.name)}${g.plusOne ? '<span class="plus1">+1</span>' : ''}</div>
+    <div class="gline">
+      <span style="color:${color};font-weight:700">● ${esc(rsvp[1])}</span>
+      ${g.dietary ? '<span title="Dietary">🍽</span>' : ''}${g.notes ? '<span title="Notes">📝</span>' : ''}
+    </div>
+  </div>`;
+}
+// Full-width edit panel shown under the row of the open card.
+function guestPanel(g) {
+  return `<div class="item open editing gpanel" data-key="guest:${g.id}">
+    <div class="item-body">
+      <div class="form-title">Editing ${esc(g.name)}</div>
+      <div class="form">${guestForm(g)}</div>
+      ${editActions(false, true)}
+    </div>
+  </div>`;
+}
+// Two columns side by side, row by row; the edit panel slots in under its row.
+function guestRows(left, right, leftCol, rightCol, emptyText) {
+  const rows = Math.max(left.length, right.length, 1);
+  let html = '';
+  for (let i = 0; i < rows; i++) {
+    const l = left[i], r = right[i];
+    const cell = (g, col) => `<div class="gcell" data-col="${col}">${g ? guestCard(g) : (i === 0 ? `<div class="empty">${emptyText}</div>` : '')}</div>`;
+    html += `<div class="grow">${cell(l, leftCol)}${cell(r, rightCol)}</div>`;
+    const open = [l, r].find(g => g && ui.open === `guest:${g.id}`);
+    if (open) html += guestPanel(open);
+  }
+  return html;
 }
 function renderGuests() {
   const { bride, groom } = names();
@@ -612,14 +640,17 @@ function renderGuests() {
   const bPct = total ? Math.round(bCount/total*100) : 0;
   const gPct = total ? Math.round(gCount/total*100) : 0;
 
-  const group = (side, label, color) => {
-    const list = bySide(side);
-    if (side === 'Both' && !all('Both').length) return '';
-    return `<div class="col-head" style="color:${color}">${esc(label)} · ${sumHeads(list)}</div>
-      <div class="guest-list" data-col="${side}">
-        ${list.length ? list.map(guestCard).join('') : `<div class="empty">${f ? 'Nobody here with that RSVP' : 'None yet'}</div>`}
-      </div>`;
-  };
+  const emptyText = f ? 'No one with this RSVP' : 'None yet';
+  const both = bySide('Both');
+  const guestGrid = `
+    <div class="grow" style="margin-bottom:0">
+      <div class="col-head" style="color:var(--pink)">${esc(bride)} · ${sumHeads(bySide('Bride'))}</div>
+      <div class="col-head" style="color:var(--blue)">${esc(groom)} · ${sumHeads(bySide('Groom'))}</div>
+    </div>
+    ${guestRows(bySide('Bride'), bySide('Groom'), 'Bride', 'Groom', emptyText)}
+    ${all('Both').length ? `
+      <div class="col-head" style="color:var(--muted)">Both sides · ${sumHeads(both)}</div>
+      ${guestRows(both.filter((_,i)=>i%2===0), both.filter((_,i)=>i%2===1), 'Both', 'Both', emptyText)}` : ''}`;
 
   return `
     <div class="summary">
@@ -651,8 +682,8 @@ function renderGuests() {
 
     ${state.guests.length === 0
       ? `<div class="empty">${flowerSVG(28,'#C2698F',0.4)}<br>No guests yet — tap “Add guest” to start</div>`
-      : group('Bride', bride, 'var(--pink)') + group('Groom', groom, 'var(--blue)') + group('Both', 'Both sides', 'var(--muted)')}
-    <div class="hint">Tap a guest to open · long-press to move between sides</div>`;
+      : guestGrid}
+    <div class="hint">Tap a guest to edit · long-press and drag to move between sides</div>`;
 }
 
 // ── FINANCE ──
@@ -671,39 +702,49 @@ function budgetForm(b, auto) {
     field('Confirmed (€)', 'actual', b.actual, { type:'number', placeholder:'0' }) +
     field('Notes', 'notes', b.notes, { full:true, area:true, placeholder:'Optional' });
 }
+function venueCostForm(vc) {
+  const venues = [...state.venues].sort((a,b) => (VENUE_STATUS[a.status]?.order ?? 9) - (VENUE_STATUS[b.status]?.order ?? 9));
+  return `<label class="fld full"><span>Venue</span>
+      <select data-f="venueId">
+        <option value="">— Not chosen yet —</option>
+        ${venues.map(v => `<option value="${v.id}"${v.id === vc.venueId ? ' selected' : ''}>${esc(v.name)}${v.status ? ' · ' + esc(v.status) : ''}</option>`).join('')}
+      </select></label>` +
+    (venues.length ? '' : '<div class="full sub" style="white-space:normal">Add venues in the Venues tab to choose one here.</div>') +
+    field('Estimated (€)', 'estimated', vc.estimated, { type:'number', placeholder:'0' }) +
+    field('Confirmed (€)', 'actual', vc.actual, { type:'number', placeholder:'0' }) +
+    field('Notes', 'notes', vc.notes, { full:true, area:true, placeholder:'Deposit, what’s included…' });
+}
 function financeRow(it) {
   const d = diffInfo(it);
   const numbers = `
     <span class="num" style="color:var(--blue);font-weight:600">${d ? `<span style="color:${d.color};font-size:10px">${d.sym}</span> ` : ''}${it.hasEst ? eur(it.est) : '—'}</span>
     <span class="num" style="${it.hasAct ? 'color:var(--green);font-weight:700' : 'color:var(--muted)'}">${it.hasAct ? eur(it.act) : '—'}</span>`;
+  const info = d ? `<span style="color:${d.color}">${d.sym} ${d.text}</span>` : '';
+  const row = (sub, title) => `<div class="fin-grid"><div class="main"><div class="sub" style="margin:0 0 2px">${sub}</div><div class="title">${title}</div></div>${numbers}</div>`;
+  const notChosen = '<span class="muted-note">Not chosen yet</span>';
+
+  if (it.kind === 'venuecost') {
+    const vc = it.raw, venue = linkedVenue();
+    const vs = venue && VENUE_STATUS[venue.status];
+    return itemCard({
+      kind:'venuecost', id:0, flat:true, canDelete:false, extraClass:'pinned',
+      head: row(`🏛 Venue${vs ? ' · ' + vs.emoji + ' ' + esc(venue.status) : ''}`, venue ? esc(venue.name) : notChosen),
+      info, form: venueCostForm(vc),
+    });
+  }
   if (it.kind === 'vendor') {
     const v = it.raw, s = VENDOR_STATUS[v.status];
     return itemCard({
       kind:'vendor', id:v.id, flat:true,
-      head: `<div class="fin-grid">
-               <div class="main">
-                 <div class="sub" style="margin:0 0 2px">${s.emoji} ${esc(v.category || 'Other')}</div>
-                 <div class="title">${v.name ? esc(v.name) : '<span class="muted-note">Not chosen yet</span>'}</div>
-               </div>${numbers}</div>`,
-      view: detail('Status', `<span class="badge" style="background:${s.bg};color:${s.color}">${s.emoji} ${esc(v.status)}</span>`) +
-            detail('Contact', esc(v.contact)) +
-            detail('Estimated', it.hasEst ? eur(it.est) : '') +
-            detail('Confirmed', it.hasAct ? eur(it.act) : '') +
-            (d ? detail('Difference', `<span style="color:${d.color}">${d.sym} ${d.text}</span>`, true) : '') +
-            detail('Notes', esc(v.notes), true),
-      form: vendorForm(v),
+      head: row(`${s.emoji} ${esc(v.category || 'Other')}`, v.name ? esc(v.name) : notChosen),
+      info, form: vendorForm(v),
     });
   }
   const b = it.raw;
   return itemCard({
     kind:'budget', id:b.id, flat:true,
-    head: `<div class="fin-grid">
-             <div class="main"><div class="sub" style="margin:0 0 2px">Budget item</div><div class="title">${esc(b.item)}</div></div>${numbers}</div>`,
-    view: detail('Estimated', it.hasEst ? eur(it.est) : '') +
-          detail('Confirmed', it.hasAct ? eur(it.act) : '') +
-          (d ? detail('Difference', `<span style="color:${d.color}">${d.sym} ${d.text}</span>`, true) : '') +
-          detail('Notes', esc(b.notes), true),
-    form: budgetForm(b),
+    head: row('Budget item', esc(b.item)),
+    info, form: budgetForm(b),
   });
 }
 function renderFinance() {
@@ -732,6 +773,7 @@ function renderFinance() {
   };
 
   const sorted = items.sort((a,b) => {
+    if ((a.kind === 'venuecost') !== (b.kind === 'venuecost')) return a.kind === 'venuecost' ? -1 : 1;
     if (a.hasAct !== b.hasAct) return a.hasAct ? -1 : 1;
     return a.hasAct ? b.act - a.act : b.est - a.est;
   });
@@ -791,7 +833,7 @@ function renderFinance() {
         <span class="num" style="color:var(--pink-dark)">${eur(spent)}</span><span></span>
       </div>
     </div>
-    <div class="hint">▲ over estimate · ▼ under estimate · tap a row to open</div>`;
+    <div class="hint">▲ over estimate · ▼ under estimate · tap a row to edit</div>`;
 }
 
 // ── VENUES ──
@@ -817,16 +859,14 @@ function renderVenues() {
         head: `<div class="main">
                  <div class="title serif">${esc(v.name)}</div>
                  <div class="sub">📍 ${esc(v.location || 'No location')}${v.price ? ' · ' + esc(v.price) : ''}</div>
+                 ${v.id === state.venueCost.venueId ? '<div class="sub" style="color:var(--pink);font-weight:600">💰 Your venue in Finance</div>' : ''}
                </div>
                <span class="badge" style="background:${s.bg};color:${s.color}">${s.emoji} ${esc(v.status)}</span>`,
-        view: detail('Price quoted', esc(v.price)) +
-              detail('Status', esc(v.status)) +
-              detail('Contact', esc(v.contact), true) +
-              detail('Notes', esc(v.notes), true),
+        info: v.id === state.venueCost.venueId ? '💰 This is the venue in your Finance budget' : '',
         form: venueForm(v),
       });
     }).join('') : '<div class="empty">No venues yet</div>'}
-    <div class="hint">Booked venues show first · tap a venue to open</div>`;
+    <div class="hint">Booked venues show first · tap a venue to edit</div>`;
 }
 
 // ── SETTINGS ──
@@ -866,6 +906,12 @@ const LISTS = { task:'checklist', guest:'guests', vendor:'vendors', budget:'budg
 
 function saveItem(kind, id, root) {
   const f = readForm(root);
+  if (kind === 'venuecost') {
+    for (const k of ['estimated','actual']) if (f[k] !== '' && isNaN(Number(f[k]))) return fail(root, k, 'Please enter numbers only for amounts');
+    Object.assign(state.venueCost, { venueId: f.venueId ? Number(f.venueId) : null, estimated: f.estimated, actual: f.actual, notes: f.notes });
+    saveAll();
+    return true;
+  }
   const list = state[LISTS[kind]];
   const isNew = id === 'new';
   const existing = isNew ? {} : list.find(x => x.id === id);
@@ -910,10 +956,25 @@ function itemLabel(kind, x) {
 }
 
 // ── EVENTS (delegated once — survive every re-render) ──
+// Unsaved-changes guard. A snapshot of the open form is taken after each render;
+// if nothing was typed/changed, it's safe to close it and move on.
+let formSnapshot = null;
+function editingRoot() { return document.querySelector('#content .item.editing'); }
+function takeSnapshot() {
+  const r = editingRoot();
+  formSnapshot = r ? JSON.stringify(readForm(r)) : null;
+}
+function isDirty() {
+  const r = editingRoot();
+  return !!r && JSON.stringify(readForm(r)) !== formSnapshot;
+}
 function busyWith(key) {
-  // Protect unsaved edits: something else is being edited/added
-  if (ui.adding) return !key || key !== `${ui.adding}:new`;
-  return ui.editing && ui.open && ui.open !== key;
+  const other = ui.adding ? (!key || key !== `${ui.adding}:new`) : (ui.editing && ui.open && ui.open !== key);
+  if (!other) return false;
+  if (isDirty()) return true;
+  // Nothing changed — quietly close whatever was open
+  ui.adding = null; ui.editing = false; ui.open = null;
+  return false;
 }
 function blockIfBusy(key) {
   if (busyWith(key)) { toast('Save or cancel your changes first'); return true; }
@@ -933,11 +994,12 @@ function onClick(e) {
 
   switch (act) {
     case 'toggle': {
-      if (ui.open === key && ui.editing && kind !== 'task') { toast('Save or cancel your changes first'); return; }
+      // Every card opens straight into its edit form; tapping the head again closes it
+      if (ui.open === key && isDirty()) { toast('Save or cancel your changes first'); return; }
       if (blockIfBusy(key)) return;
       ui.open = ui.open === key ? null : key;
-      ui.editing = !!ui.open && kind === 'task';
-      ui.focus = ui.editing;
+      ui.editing = !!ui.open;
+      ui.focus = ui.editing && kind === 'task';
       break;
     }
     case 'check': {
@@ -955,26 +1017,26 @@ function onClick(e) {
       group.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('on', ch === btn));
       return; // no re-render: keep what's typed
     }
-    case 'edit':
-      ui.editing = true; ui.focus = true;
-      break;
     case 'cancel':
       if (id === 'new') ui.adding = null;
-      else { ui.editing = false; if (kind === 'task') ui.open = null; }
+      else { ui.editing = false; ui.open = null; }
       break;
     case 'save':
       if (!saveItem(kind, id, root)) return;
       toast(id === 'new' ? 'Added ✓' : 'Saved ✓');
       if (id === 'new') ui.adding = null;
       ui.editing = false;
-      if (kind === 'task') ui.open = null;
+      ui.open = null;
       break;
     case 'delete': {
       const list = state[LISTS[kind]];
       const item = list.find(x => x.id === id);
       if (!item) return;
-      confirmDelete(itemLabel(kind, item), kind === 'guest' && item.plusOne ? 'Their +1 goes too.' : '', () => {
+      const linked = kind === 'venue' && id === state.venueCost.venueId;
+      const extra = kind === 'guest' && item.plusOne ? 'Their +1 goes too.' : linked ? 'It’s your venue in Finance — that line will say “Not chosen yet” (its costs stay).' : '';
+      confirmDelete(itemLabel(kind, item), extra, () => {
         state[LISTS[kind]] = list.filter(x => x.id !== id);
+        if (linked) state.venueCost.venueId = null;
         ui.open = null; ui.editing = false;
         saveAll(); render(); toast('Deleted');
       });
@@ -984,9 +1046,9 @@ function onClick(e) {
       const k = btn.dataset.kind;
       const sameForm = ui.adding === k && (k !== 'task' || ui.addSection === btn.dataset.section);
       if (sameForm) { ui.adding = null; break; }
-      if (ui.adding || ui.editing) { toast('Save or cancel your changes first'); return; }
+      if ((ui.adding || ui.editing) && isDirty()) { toast('Save or cancel your changes first'); return; }
       ui.adding = k; ui.addSection = btn.dataset.section || null;
-      ui.open = null; ui.focus = true;
+      ui.open = null; ui.editing = false; ui.focus = true;
       break;
     }
     case 'filter':
@@ -1019,8 +1081,8 @@ function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (btn.dataset.tab === ui.tab) return;
-      if (ui.editing || ui.adding) { toast('Save or cancel your changes first'); return; }
-      ui.tab = btn.dataset.tab; ui.open = null;
+      if ((ui.editing || ui.adding) && isDirty()) { toast('Save or cancel your changes first'); return; }
+      ui.tab = btn.dataset.tab; ui.open = null; ui.editing = false; ui.adding = null;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
       window.scrollTo({ top: 0 });
       render();
@@ -1029,64 +1091,63 @@ function initTabs() {
 }
 
 // ── TOUCH DRAG AND DROP (guests between sides) ──
+// Long-press a guest card, drag it over the other column (or "Both sides"), let go.
 function initDragDrop() {
-  document.querySelectorAll('.guest-item').forEach(card => {
-    const head = card.querySelector('.item-head');
-    if (!head) return;
+  document.querySelectorAll('.gcard').forEach(card => {
     const id = Number(card.dataset.key.split(':')[1]);
     let timer, ghost = null, startX = 0, startY = 0;
 
-    const cleanup = () => {
-      clearTimeout(timer);
-      ghost?.remove(); ghost = null;
-      card.classList.remove('dragging');
-      document.querySelectorAll('.guest-list').forEach(l => l.classList.remove('drop-hover'));
-    };
+    const clearHover = () => document.querySelectorAll('.gcell.drop-hover').forEach(x => x.classList.remove('drop-hover'));
+    const cleanup = () => { clearTimeout(timer); ghost?.remove(); ghost = null; card.classList.remove('dragging'); clearHover(); };
+    const cellAt = (x, y) => document.elementFromPoint(x, y)?.closest('.gcell');
 
-    head.addEventListener('touchstart', e => {
-      if (ui.editing || ui.adding || card.classList.contains('open')) return;
+    card.addEventListener('touchstart', e => {
+      if (ui.editing || ui.adding) return;
       const t = e.touches[0]; startX = t.clientX; startY = t.clientY;
       timer = setTimeout(() => {
         card.classList.add('dragging');
+        const r = card.getBoundingClientRect();
         ghost = card.cloneNode(true);
-        ghost.style.cssText = `position:fixed;z-index:999;pointer-events:none;width:${card.offsetWidth}px;opacity:0.9;border-color:var(--pink);left:${card.getBoundingClientRect().left}px;top:${t.clientY-26}px`;
+        ghost.style.cssText = `position:fixed;z-index:999;pointer-events:none;width:${r.width}px;opacity:0.92;border-color:var(--pink);left:${r.left}px;top:${r.top}px`;
+        ghost.dataset.dx = t.clientX - r.left; ghost.dataset.dy = t.clientY - r.top;
         document.body.appendChild(ghost);
         if (navigator.vibrate) navigator.vibrate(30);
       }, 450);
     }, { passive: true });
 
-    head.addEventListener('touchmove', e => {
+    card.addEventListener('touchmove', e => {
       const t = e.touches[0];
       if (!ghost) {
         if (Math.abs(t.clientX-startX) > 8 || Math.abs(t.clientY-startY) > 8) clearTimeout(timer);
         return;
       }
       e.preventDefault();
-      ghost.style.top = (t.clientY - 26) + 'px';
-      const list = document.elementFromPoint(t.clientX, t.clientY)?.closest('.guest-list');
-      document.querySelectorAll('.guest-list').forEach(l => l.classList.toggle('drop-hover', l === list));
+      ghost.style.left = (t.clientX - ghost.dataset.dx) + 'px';
+      ghost.style.top  = (t.clientY - ghost.dataset.dy) + 'px';
+      clearHover();
+      cellAt(t.clientX, t.clientY)?.classList.add('drop-hover');
     }, { passive: false });
 
-    head.addEventListener('touchend', e => {
+    card.addEventListener('touchend', e => {
       if (!ghost) { clearTimeout(timer); return; }
       const t = e.changedTouches[0];
-      const el = document.elementFromPoint(t.clientX, t.clientY);
-      const list = el?.closest('.guest-list');
-      const targetCard = el?.closest('.guest-item');
-      const g = state.guests.find(x => x.id === id);
+      const cell = cellAt(t.clientX, t.clientY);
       cleanup();
       suppressClick = true; setTimeout(() => { suppressClick = false; }, 400);
-      if (!g) return;
-      if (list) g.side = list.dataset.col;
-      if (targetCard && targetCard !== card) {
-        const toId = Number(targetCard.dataset.key.split(':')[1]);
-        const from = state.guests.findIndex(x => x.id === id);
-        const [moved] = state.guests.splice(from, 1);
+      const g = state.guests.find(x => x.id === id);
+      if (!g || !cell) return;
+      g.side = cell.dataset.col;
+      // Dropped onto another guest: place it just before them
+      const target = cell.querySelector('.gcard');
+      if (target && target !== card) {
+        const toId = Number(target.dataset.key.split(':')[1]);
+        const [moved] = state.guests.splice(state.guests.findIndex(x => x.id === id), 1);
         state.guests.splice(state.guests.findIndex(x => x.id === toId), 0, moved);
       }
       saveAll(); render();
+      toast(`Moved to ${g.side === 'Both' ? 'both sides' : g.side === 'Bride' ? names().bride : names().groom}`);
     });
-    head.addEventListener('touchcancel', cleanup);
+    card.addEventListener('touchcancel', cleanup);
   });
 }
 
